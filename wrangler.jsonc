@@ -16,8 +16,8 @@
 	"d1_databases": [
     {
       "binding": "DB",
-      "database_name": "prod-d1",
-      "database_id": "<unique-ID-for-your-database>"
+      "database_name": "exchange",
+      "database_id": "38e26eed-c6e9-4270-af25-74fa2c924490"
     }
   ]
 }
