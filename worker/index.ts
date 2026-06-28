@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq } from 'drizzle-orm';
+import { eq, and, lte } from 'drizzle-orm';
 import * as schema from '../src/db/schema';
 import type { TelegramUser } from '../src/App';
 
@@ -110,6 +110,59 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
+async function processMatureInvestments(db: any, user: any) {
+  const now = Math.floor(Date.now() / 1000);
+  
+  const matureInvestments = await db.select()
+    .from(schema.investments)
+    .where(and(
+      eq(schema.investments.userId, user.id),
+      eq(schema.investments.status, 'active'),
+      lte(schema.investments.endDate, now)
+    )).all();
+
+  if (matureInvestments.length === 0) return user;
+
+  let totalReturn = 0;
+  let totalPrincipal = 0;
+  
+  for (const inv of matureInvestments) {
+    totalPrincipal += inv.amount;
+    totalReturn += inv.expectedReturn;
+  }
+  
+  const totalCredit = totalPrincipal + totalReturn;
+  
+  const updates: any[] = [
+    db.update(schema.users)
+      .set({ 
+        balance: user.balance + totalCredit,
+        totalEarned: user.totalEarned + totalReturn
+      })
+      .where(eq(schema.users.id, user.id))
+      .returning(),
+      
+    db.insert(schema.transactions).values({
+      userId: user.id,
+      type: 'investment_return',
+      amount: totalCredit,
+      status: 'completed',
+      createdAt: now
+    })
+  ];
+
+  for (const inv of matureInvestments) {
+    updates.push(
+      db.update(schema.investments)
+        .set({ status: 'completed' })
+        .where(eq(schema.investments.id, inv.id))
+    );
+  }
+  
+  const batchRes = await db.batch(updates);
+  return batchRes[0][0]; // the updated user
+}
+
 // Sync User Endpoint
 app.post('/api/auth/sync', async (c) => {
   const tgUser = c.get('user');
@@ -131,6 +184,8 @@ app.post('/api/auth/sync', async (c) => {
     user = insertedUser;
   }
 
+  user = await processMatureInvestments(db, user);
+
   return c.json({ user });
 });
 
@@ -138,9 +193,12 @@ app.post('/api/auth/sync', async (c) => {
 app.get('/api/user', async (c) => {
   const tgUser = c.get('user');
   const db = drizzle(c.env.DB);
-  const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
+  let user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   
   if (!user) return c.json({ error: 'User not found' }, 404);
+  
+  user = await processMatureInvestments(db, user);
+  
   return c.json({ user });
 });
 
@@ -287,7 +345,7 @@ app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
 // Withdraw Simulation
 const withdrawSchema = z.object({ 
   amount: z.number().positive(),
-  address: z.string().min(10)
+  address: z.string().regex(/^(0x[a-fA-F0-9]{40}|T[A-Za-z1-9]{33}|[LM][a-km-zA-HJ-NP-Z1-9]{26,33})$/, 'Invalid crypto address format')
 });
 app.post('/api/withdraw', zValidator('json', withdrawSchema), async (c) => {
   const tgUser = c.get('user');
@@ -335,8 +393,9 @@ app.get('/api/referrals', async (c) => {
   
   const referrals = await db.select().from(schema.users).where(eq(schema.users.referredBy, tgUser.id)).all();
   
-  // Basic mock calculation: $4 per direct referral
-  const totalEarned = referrals.length * 4.0;
+  // Calculate total earned dynamically from referrals
+  const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
+  const totalEarned = user ? user.totalEarned : 0;
 
   return c.json({ 
     networkSize: referrals.length,

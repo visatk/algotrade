@@ -9,8 +9,9 @@ interface ProfileProps {
 }
 
 export const Profile: React.FC<ProfileProps> = ({ onBack, user }) => {
-  const displayName = user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Dr King';
-  const displayUsername = user?.username ? `@${user.username}` : '@RealDrKing';
+  const displayName = user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Guest';
+  const displayUsername = user?.username ? `@${user.username}` : '';
+  const joinDate = user?.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString() : 'today';
 
   return (
     <div style={{ paddingBottom: '120px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -31,8 +32,8 @@ export const Profile: React.FC<ProfileProps> = ({ onBack, user }) => {
             </div>
             <div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{displayName}</div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>{displayUsername}</div>
-              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Member since today</div>
+              {displayUsername && <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>{displayUsername}</div>}
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.4)' }}>Member since {joinDate}</div>
             </div>
           </div>
         </Card>

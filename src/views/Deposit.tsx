@@ -10,8 +10,24 @@ interface DepositProps {
 
 export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
   const [amount, setAmount] = useState<number>(50);
+  const [network, setNetwork] = useState<string>('USDT(TRX20)');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const addresses: Record<string, string> = {
+    'USDT(TRX20)': 'TGxhyDRrU8EfzozZqM7sK6bztSK348Ue9Y',
+    'LTC': 'LS4tMyzN5pzovB3iJtmo1cWoo8gHdNcjxy',
+    'USDT(BEP20)': '0x32717e9d5e81ca1cb22335c412421e6f83b69d83',
+    'ETH': '0x32717e9d5e81ca1cb22335c412421e6f83b69d83',
+    'BNB': '0x26C61a35D76656EFf940444b5D7c4261Afb37c95'
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(addresses[network]);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleDeposit = async () => {
     try {
@@ -43,16 +59,18 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
     outline: 'none',
   };
 
-  const pillStyle = (selected: boolean): React.CSSProperties => ({
-    padding: '8px 16px',
-    borderRadius: '16px',
-    background: selected ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)',
-    color: selected ? '#fff' : 'var(--text-secondary)',
-    border: `1px solid ${selected ? 'var(--accent-blue)' : 'var(--border-color)'}`,
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px'
-  });
+  function getPillStyle(selected: boolean): React.CSSProperties {
+    return {
+      padding: '8px 16px',
+      borderRadius: '16px',
+      background: selected ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)',
+      color: selected ? '#fff' : 'var(--text-secondary)',
+      border: `1px solid ${selected ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      fontSize: '14px'
+    };
+  }
 
   return (
     <div style={{ paddingBottom: '100px' }}>
@@ -82,7 +100,7 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
             {pills.map((p) => (
               <button 
                 key={p} 
-                style={pillStyle(amount === p)}
+                style={getPillStyle(amount === p)}
                 onClick={() => setAmount(p)}
               >
                 ${p}
@@ -151,11 +169,60 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
           </div>
         </Card>
 
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>Select Payment Method</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            {Object.keys(addresses).map((net) => (
+              <button
+                key={net}
+                onClick={() => setNetwork(net)}
+                style={{
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: network === net ? 'var(--accent-blue)' : 'rgba(255,255,255,0.05)',
+                  color: network === net ? '#fff' : 'var(--text-secondary)',
+                  border: `1px solid ${network === net ? 'var(--accent-blue)' : 'var(--border-color)'}`,
+                  fontSize: '14px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                {net}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <Card variant="solid" style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '8px' }}>Send exactly ${total.toFixed(2)} to this {network} address:</div>
+          <div 
+            onClick={handleCopy}
+            style={{ 
+              background: 'rgba(0,0,0,0.2)', 
+              padding: '16px', 
+              borderRadius: '12px', 
+              border: '1px dashed var(--border-color)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              wordBreak: 'break-all'
+            }}
+          >
+            <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#fff', marginRight: '12px' }}>
+              {addresses[network]}
+            </span>
+            <span style={{ color: copied ? 'var(--accent-green)' : 'var(--accent-blue)', flexShrink: 0, fontWeight: 'bold' }}>
+              {copied ? 'Copied!' : 'Copy'}
+            </span>
+          </div>
+        </Card>
+
         <Card variant="solid">
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {[
-              'Copy the address or scan the QR code',
-              'Send USDT on the BEP20 network',
+              'Copy the address above',
+              `Send exactly $${total.toFixed(2)} on the ${network} network`,
               'Your balance updates automatically (~2 min)'
             ].map((text, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -191,7 +258,7 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
               opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? 'Processing...' : 'Simulate Deposit Now'}
+            {loading ? 'Processing...' : 'I Have Paid'}
           </button>
         </div>
       </div>

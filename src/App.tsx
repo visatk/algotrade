@@ -30,6 +30,7 @@ export interface TelegramUser {
   dailyStreak: number;
   lastClaimDate: number | null;
   verificationClaimed: boolean;
+  createdAt: number;
 }
 
 function App() {

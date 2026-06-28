@@ -61,17 +61,19 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshU
     outline: 'none',
   };
 
-  const pillStyle = (selected: boolean): React.CSSProperties = ({
-    padding: '8px 16px',
-    borderRadius: '8px',
-    background: selected ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255,255,255,0.05)',
-    color: selected ? 'var(--accent-green)' : 'var(--text-secondary)',
-    border: `1px solid ${selected ? 'var(--accent-green)' : 'transparent'}`,
-    fontWeight: 'bold',
-    cursor: 'pointer',
-    fontSize: '14px',
-    minWidth: '60px'
-  });
+  function getPillStyle(selected: boolean): React.CSSProperties {
+    return {
+      padding: '8px 16px',
+      borderRadius: '8px',
+      background: selected ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255,255,255,0.05)',
+      color: selected ? 'var(--accent-green)' : 'var(--text-secondary)',
+      border: `1px solid ${selected ? 'var(--accent-green)' : 'transparent'}`,
+      fontWeight: 'bold',
+      cursor: 'pointer',
+      fontSize: '14px',
+      minWidth: '60px'
+    };
+  }
 
   return (
     <div style={{ paddingBottom: '140px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
@@ -115,7 +117,7 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshU
               {pills.map((p) => (
                 <button 
                   key={p} 
-                  style={pillStyle(amount === p)}
+                  style={getPillStyle(amount === p)}
                   onClick={() => {
                     setAmount(p);
                     if (p <= 50) setSelectedPlanId('fan');
