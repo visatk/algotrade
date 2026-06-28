@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './index.css';
-import WebApp from '@twa-dev/sdk';
 import { api } from './api/client';
+import type { TelegramUser } from './types';
 import { Home } from './views/Home';
 import { Withdraw } from './views/Withdraw';
 import { InvestInfo } from './views/InvestInfo';
@@ -17,38 +17,21 @@ import { BottomNav } from './components/BottomNav';
 type View = 'home' | 'withdraw' | 'invest-info' | 'verification' | 'deposit' | 'deposit-rewards' | 'invest' | 'invite' | 'profile' | 'bonuses';
 type NavTab = 'home' | 'trophy' | 'deposit' | 'invest' | 'invite' | 'profile';
 
-export interface TelegramUser {
-  id: number;
-  first_name: string;
-  last_name?: string;
-  username?: string;
-  photo_url?: string;
-  balance: number;
-  totalDeposited: number;
-  totalWithdrawn: number;
-  totalEarned: number;
-  dailyStreak: number;
-  lastClaimDate: number | null;
-  verificationClaimed: boolean;
-  createdAt: number;
-}
+
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('home');
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [balance, setBalance] = useState('0.00');
-  const [loading, setLoading] = useState(true);
   
   const refreshUser = async () => {
     try {
-      const data = await api.syncUser();
+      const data = (await api.syncUser()) as { user: TelegramUser };
       setUser(data.user);
       setBalance(data.user.balance.toFixed(2));
     } catch (err) {
       console.error('Failed to sync user:', err);
-    } finally {
-      setLoading(false);
     }
   };
 

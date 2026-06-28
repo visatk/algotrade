@@ -3,7 +3,7 @@ import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
-import { TelegramUser } from '../App';
+import type { TelegramUser } from '../types';
 
 interface InviteProps {
   onBack: () => void;
@@ -20,7 +20,7 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
   useEffect(() => {
     const fetchReferrals = async () => {
       try {
-        const data = await api.getReferrals();
+        const data = (await api.getReferrals()) as { networkSize: number; totalEarned: number; levels: { level: number; count: number; }[] };
         setStats(data);
       } catch (err) {
         console.error('Failed to fetch referrals:', err);

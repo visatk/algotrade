@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { drizzle } from 'drizzle-orm/d1';
 import { eq, and, lte } from 'drizzle-orm';
 import * as schema from '../src/db/schema';
-import type { TelegramUser } from '../src/App';
+import type { TelegramUser } from '../src/types';
 
 export interface Env {
   DB: D1Database;
@@ -81,8 +81,13 @@ app.use('/api/*', async (c, next) => {
       username: 'dev_user',
       balance: 0,
       dailyStreak: 0,
-      lastClaimDate: null 
-    });
+      lastClaimDate: null,
+      totalDeposited: 0,
+      totalWithdrawn: 0,
+      totalEarned: 0,
+      verificationClaimed: false,
+      createdAt: Math.floor(Date.now() / 1000)
+    } as TelegramUser);
     return next();
   }
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/Header';
-import type { TelegramUser } from '../App';
+import type { TelegramUser } from '../types';
 import { api } from '../api/client';
 
 interface HomeProps {
