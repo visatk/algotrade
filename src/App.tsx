@@ -27,9 +27,11 @@ function App() {
   
   const refreshUser = async () => {
     try {
-      const data = (await api.syncUser()) as { user: TelegramUser };
-      setUser(data.user);
-      setBalance(data.user.balance.toFixed(2));
+      const data = (await api.syncUser()) as { user?: TelegramUser };
+      if (data && data.user) {
+        setUser(data.user);
+        setBalance((data.user.balance || 0).toFixed(2));
+      }
     } catch (err) {
       console.error('Failed to sync user:', err);
     }
