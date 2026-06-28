@@ -10,6 +10,16 @@ export interface TelegramUser {
   totalEarned: number;
   dailyStreak: number;
   lastClaimDate: number | null;
+  giftBoxes: number;
   verificationClaimed: boolean;
+  createdAt: number;
+}
+
+export interface Transaction {
+  id: number;
+  userId: number;
+  type: string;
+  amount: number;
+  status: string;
   createdAt: number;
 }

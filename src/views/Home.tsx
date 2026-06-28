@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { Header } from '../components/Header';
 import type { TelegramUser } from '../types';
 import { api } from '../api/client';
+import { faker } from '@faker-js/faker';
 
 interface HomeProps {
   onNavigate: (view: string) => void;
@@ -15,14 +16,67 @@ interface HomeProps {
 export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUser }) => {
   const [showDailyReward, setShowDailyReward] = useState(false);
   const [claiming, setClaiming] = useState(false);
+  const [timeToNextReward, setTimeToNextReward] = useState('00:00:00');
+  const [canClaim, setCanClaim] = useState(false);
   
+  // Faker Live Activities
+  const [activities, setActivities] = useState<{ id: string; user: string; action: string; amount: number; isDeposit: boolean }[]>([]);
+
+  useEffect(() => {
+    // Initial fake activities
+    const generateActivity = () => ({
+      id: faker.string.uuid(),
+      user: `${faker.person.firstName()} ${faker.person.lastName().charAt(0)}.`,
+      action: faker.helpers.arrayElement(['deposited', 'withdrew']),
+      amount: parseFloat(faker.finance.amount({ min: 10, max: 500, dec: 2 })),
+      isDeposit: Math.random() > 0.5
+    });
+    
+    setActivities(Array.from({ length: 4 }).map(generateActivity));
+    
+    const interval = setInterval(() => {
+      setActivities(prev => {
+        const newAct = generateActivity();
+        return [newAct, ...prev.slice(0, 4)];
+      });
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     if (user) {
       const now = Math.floor(Date.now() / 1000);
       const oneDay = 24 * 60 * 60;
+      
+      const updateTimer = () => {
+        const currentNow = Math.floor(Date.now() / 1000);
+        if (!user.lastClaimDate || (currentNow - user.lastClaimDate) >= oneDay) {
+          setCanClaim(true);
+          setTimeToNextReward('Ready to claim!');
+        } else {
+          setCanClaim(false);
+          const nextClaim = user.lastClaimDate + oneDay;
+          const diff = nextClaim - currentNow;
+          if (diff <= 0) {
+            setCanClaim(true);
+            setTimeToNextReward('Ready to claim!');
+          } else {
+            const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+            const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            setTimeToNextReward(`${h}:${m}:${s}`);
+          }
+        }
+      };
+      
+      updateTimer();
+      const timerInterval = setInterval(updateTimer, 1000);
+      
       if (!user.lastClaimDate || (now - user.lastClaimDate) >= oneDay) {
         setShowDailyReward(true);
       }
+      
+      return () => clearInterval(timerInterval);
     }
   }, [user]);
 
@@ -104,17 +158,19 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
           <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontSize: '14px' }}>Claim bonus →</div>
         </Card>
 
-        <Card variant="solid" style={{ marginBottom: '32px' }}>
-          <div className="flex-between">
+        <Card variant="solid" style={{ marginBottom: '32px' }} onClick={() => setShowDailyReward(true)}>
+          <div className="flex-between" style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ background: 'var(--gradient-primary)', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎁</div>
               <div>
                 <div style={{ fontWeight: 'bold' }}>Daily reward</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Next in 17:46:18</div>
+                <div style={{ fontSize: '12px', color: canClaim ? 'var(--accent-green)' : 'var(--text-secondary)' }}>
+                  {canClaim ? 'Claim now!' : `Next in ${timeToNextReward}`}
+                </div>
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#e67e22' }}>🔥 1</span>
+              <span style={{ color: '#e67e22' }}>🔥 {user?.dailyStreak || 0}</span>
               <span style={{ color: 'var(--text-secondary)' }}>&gt;</span>
             </div>
           </div>
@@ -124,12 +180,13 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
         <div style={{ marginBottom: '16px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Live Activity</div>
           <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-            <Card variant="solid" padding="sm" style={{ minWidth: '200px', flexShrink: 0 }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Zinaida F. Withdrew $...</div>
-            </Card>
-            <Card variant="solid" padding="sm" style={{ minWidth: '200px', flexShrink: 0 }}>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Karina E. deposited <span style={{ color: 'var(--accent-green)' }}>$191.69</span></div>
-            </Card>
+            {activities.map(act => (
+              <Card key={act.id} variant="solid" padding="sm" style={{ minWidth: '200px', flexShrink: 0 }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  {act.user} {act.action} <span style={{ color: act.isDeposit ? 'var(--accent-green)' : 'var(--accent-blue)' }}>${act.amount}</span>
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -155,24 +212,32 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
             </div>
             
             <div style={{ display: 'flex', gap: '8px', marginBottom: '24px', overflowX: 'auto', paddingBottom: '8px' }}>
-              {[1, 2, 3, 4, 5, 6, 7].map((day) => (
-                <div key={day} style={{ 
-                  flex: '1', minWidth: '45px', border: day === 1 ? '1px solid var(--accent-blue)' : '1px solid var(--border-color)', 
-                  borderRadius: '12px', padding: '8px 4px', textAlign: 'center', 
-                  background: day === 1 ? 'rgba(65, 105, 225, 0.1)' : 'transparent'
-                }}>
-                  <div style={{ fontWeight: 'bold', fontSize: '14px' }}>${day === 1 ? '0.5' : day === 2 ? '0.5' : day === 3 || day === 4 ? '1' : day === 5 ? '1.5' : day === 6 ? '2' : '3'}</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>D{day}</div>
-                </div>
-              ))}
+              {[1, 2, 3, 4, 5, 6, 7].map((day) => {
+                const isCurrent = day === ((user?.dailyStreak || 0) % 7) + 1;
+                return (
+                  <div key={day} style={{ 
+                    flex: '1', minWidth: '45px', border: isCurrent ? '1px solid var(--accent-blue)' : '1px solid var(--border-color)', 
+                    borderRadius: '12px', padding: '8px 4px', textAlign: 'center', 
+                    background: isCurrent ? 'rgba(65, 105, 225, 0.1)' : 'transparent'
+                  }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>${day === 1 || day === 2 ? '0.5' : day === 3 || day === 4 ? '1' : day === 5 ? '1.5' : day === 6 ? '2' : '3'}</div>
+                    <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>D{day}</div>
+                  </div>
+                );
+              })}
             </div>
             
             <Button fullWidth onClick={async () => {
+              if (!canClaim) {
+                setShowDailyReward(false);
+                return;
+              }
               if (refreshUser) {
                 setClaiming(true);
                 try {
                   await api.claimDailyReward();
                   await refreshUser();
+                  setCanClaim(false);
                 } catch (e) {
                   console.error(e);
                 } finally {
@@ -181,7 +246,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
               }
               setShowDailyReward(false);
             }} disabled={claiming}>
-              {claiming ? 'Claiming...' : 'Claim Reward'}
+              {claiming ? 'Claiming...' : canClaim ? 'Claim Reward' : 'Come back tomorrow'}
             </Button>
           </div>
         </div>

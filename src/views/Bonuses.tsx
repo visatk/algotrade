@@ -1,12 +1,40 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
+import type { TelegramUser } from '../types';
+import { api } from '../api/client';
 
 interface BonusesProps {
   onBack: () => void;
+  user?: TelegramUser;
+  refreshUser?: () => Promise<void>;
 }
 
-export const Bonuses: React.FC<BonusesProps> = ({ onBack }) => {
+export const Bonuses: React.FC<BonusesProps> = ({ onBack, user, refreshUser }) => {
   const [showRules, setShowRules] = useState(false);
+  const [opening, setOpening] = useState(false);
+  const [reward, setReward] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const boxes = user?.giftBoxes || 0;
+
+  const handleOpenBox = async () => {
+    if (boxes <= 0 || opening) return;
+    setOpening(true);
+    setReward(null);
+    setError(null);
+
+    try {
+      const res = await api.openGiftBox();
+      if (refreshUser) {
+        await refreshUser();
+      }
+      setReward(res.rewardAmount);
+    } catch (err: any) {
+      setError(err.message || 'Failed to open box');
+    } finally {
+      setOpening(false);
+    }
+  };
 
   return (
     <div style={{ paddingBottom: '120px', display: 'flex', flexDirection: 'column', minHeight: '100vh', background: 'linear-gradient(180deg, #1a0b2e 0%, #110524 100%)' }}>
@@ -28,25 +56,69 @@ export const Bonuses: React.FC<BonusesProps> = ({ onBack }) => {
           ● FREE BONUSES
         </div>
 
-        {/* Chest Illustration Placeholder */}
+        {/* Chest Illustration */}
         <div style={{ position: 'relative', width: '250px', height: '250px', marginBottom: '32px' }}>
           <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle, rgba(241,196,15,0.2) 0%, transparent 70%)', borderRadius: '50%' }} />
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '120px', filter: 'drop-shadow(0 10px 20px rgba(241,196,15,0.4))' }}>
+          <div style={{ 
+            width: '100%', 
+            height: '100%', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            fontSize: '120px', 
+            filter: 'drop-shadow(0 10px 20px rgba(241,196,15,0.4))',
+            animation: opening ? 'shake 0.5s ease-in-out infinite' : 'none'
+          }}>
             🧰
           </div>
           {/* Sparkles/Coins placeholder */}
-          <div style={{ position: 'absolute', top: '10%', left: '10%', fontSize: '30px' }}>✨</div>
-          <div style={{ position: 'absolute', top: '20%', right: '15%', fontSize: '24px' }}>🪙</div>
-          <div style={{ position: 'absolute', bottom: '30%', left: '0%', fontSize: '40px' }}>💰</div>
+          <div style={{ position: 'absolute', top: '10%', left: '10%', fontSize: '30px', animation: 'pulse 2s infinite' }}>✨</div>
+          <div style={{ position: 'absolute', top: '20%', right: '15%', fontSize: '24px', animation: 'pulse 2s infinite 1s' }}>🪙</div>
+          <div style={{ position: 'absolute', bottom: '30%', left: '0%', fontSize: '40px', animation: 'pulse 2s infinite 0.5s' }}>💰</div>
         </div>
+
+        {reward !== null && (
+          <div style={{ background: 'rgba(46, 204, 113, 0.2)', color: 'var(--accent-green)', padding: '16px', borderRadius: '16px', marginBottom: '24px', textAlign: 'center', animation: 'slideUp 0.3s ease-out', border: '1px solid var(--accent-green)' }}>
+            <h2 style={{ fontSize: '24px', marginBottom: '4px' }}>+${reward.toFixed(2)} USDT</h2>
+            <p style={{ fontSize: '14px' }}>Added to your balance!</p>
+          </div>
+        )}
+
+        {error && (
+          <div style={{ color: '#e74c3c', marginBottom: '24px', background: 'rgba(231, 76, 60, 0.1)', padding: '12px', borderRadius: '8px' }}>
+            {error}
+          </div>
+        )}
 
         <h1 style={{ fontSize: '32px', textAlign: 'center', marginBottom: '16px', lineHeight: '1.2' }}>
           Open Gift Boxes,<br/>win real rewards!
         </h1>
         
         <p style={{ color: 'var(--text-secondary)', fontSize: '16px', textAlign: 'center', marginBottom: '40px' }}>
-          USDT and deposit bonuses are waiting for you.
+          You have <strong style={{ color: '#f1c40f', fontSize: '20px' }}>{boxes}</strong> gift box{boxes !== 1 ? 'es' : ''} available.
         </p>
+
+        <button 
+          onClick={handleOpenBox}
+          disabled={boxes <= 0 || opening}
+          style={{ 
+            width: '100%', 
+            padding: '16px', 
+            background: boxes > 0 ? 'var(--accent-blue)' : 'rgba(255,255,255,0.1)', 
+            color: boxes > 0 ? '#fff' : 'var(--text-secondary)', 
+            border: 'none', 
+            borderRadius: '16px', 
+            fontSize: '18px', 
+            fontWeight: 'bold',
+            cursor: boxes > 0 && !opening ? 'pointer' : 'not-allowed',
+            marginBottom: '32px',
+            opacity: opening ? 0.7 : 1,
+            boxShadow: boxes > 0 ? '0 10px 20px rgba(88, 101, 242, 0.4)' : 'none',
+            transition: 'all 0.2s'
+          }}
+        >
+          {opening ? 'Opening...' : boxes > 0 ? 'Open 1 Box' : 'No boxes available'}
+        </button>
 
         <Card variant="solid" style={{ width: '100%', textAlign: 'center', padding: '24px', marginBottom: '32px', background: 'rgba(255,255,255,0.05)' }}>
           Earn boxes from your <strong style={{ color: '#f1c40f' }}>Daily Reward</strong>, deposits and invites.
@@ -102,6 +174,14 @@ export const Bonuses: React.FC<BonusesProps> = ({ onBack }) => {
           </div>
         </div>
       )}
+      <style>{`
+        @keyframes shake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-5px) rotate(-5deg); }
+          50% { transform: translateX(5px) rotate(5deg); }
+          75% { transform: translateX(-5px) rotate(-5deg); }
+        }
+      `}</style>
     </div>
   );
 };

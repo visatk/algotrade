@@ -12,9 +12,13 @@ import { Invest } from './views/Invest';
 import { Invite } from './views/Invite';
 import { Profile } from './views/Profile';
 import { Bonuses } from './views/Bonuses';
+import { Transactions } from './views/Transactions';
+import { Guide } from './views/Guide';
+import { Support } from './views/Support';
+import { Settings } from './views/Settings';
 import { BottomNav } from './components/BottomNav';
 
-type View = 'home' | 'withdraw' | 'invest-info' | 'verification' | 'deposit' | 'deposit-rewards' | 'invest' | 'invite' | 'profile' | 'bonuses';
+type View = 'home' | 'withdraw' | 'invest-info' | 'verification' | 'deposit' | 'deposit-rewards' | 'invest' | 'invite' | 'profile' | 'bonuses' | 'transactions' | 'guide' | 'support' | 'settings';
 type NavTab = 'home' | 'trophy' | 'deposit' | 'invest' | 'invite' | 'profile';
 
 
@@ -93,6 +97,8 @@ function App() {
         <DepositRewards 
           onBack={() => setCurrentView('deposit')} 
           onDeposit={() => setCurrentView('deposit')} 
+          user={user}
+          refreshUser={refreshUser}
         />
       )}
 
@@ -109,15 +115,33 @@ function App() {
       )}
 
       {currentView === 'profile' && (
-        <Profile onBack={() => setCurrentView('home')} user={user} />
+        <Profile 
+          onBack={() => setCurrentView('home')} 
+          user={user} 
+          onNavigate={handleNavigate}
+        />
+      )}
+      
+      {currentView === 'transactions' && (
+        <Transactions onBack={() => setCurrentView('profile')} />
+      )}
+      
+      {currentView === 'guide' && (
+        <Guide onBack={() => setCurrentView('profile')} />
+      )}
+      
+      {currentView === 'bonuses' && (
+        <Bonuses onBack={() => setCurrentView('home')} user={user} refreshUser={refreshUser} />
+      )}
+      
+      {currentView === 'support' && (
+        <Support onBack={() => setCurrentView('profile')} />
+      )}
+      
+      {currentView === 'settings' && (
+        <Settings onBack={() => setCurrentView('profile')} />
       )}
 
-      {currentView === 'bonuses' && (
-        <Bonuses onBack={() => {
-          setActiveTab('home');
-          setCurrentView('home');
-        }} />
-      )}
 
       {/* Show BottomNav on main tabs */}
       {isMainTab && (

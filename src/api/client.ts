@@ -44,4 +44,10 @@ export const api = {
   }),
   getReferrals: () => fetchApi('/api/referrals', { method: 'GET' }),
   verifyTask: () => fetchApi('/api/tasks/verify', { method: 'POST' }),
+  getTransactions: () => fetchApi('/api/transactions', { method: 'GET' }),
+  openGiftBox: () => fetchApi('/api/rewards/open-box', { method: 'POST' }),
+  claimDepositMilestone: (amount: number) => fetchApi('/api/rewards/deposit-milestone', {
+    method: 'POST',
+    body: JSON.stringify({ amount }),
+  }),
 };

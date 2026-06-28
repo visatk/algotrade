@@ -176,11 +176,23 @@ app.post('/api/auth/sync', async (c) => {
   let user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   
   if (!user) {
+    const initData = c.req.header('X-Telegram-Init-Data') || '';
+    const urlParams = new URLSearchParams(initData);
+    const startParam = urlParams.get('start_param');
+    let referredBy = null;
+    if (startParam) {
+      const parsed = parseInt(startParam, 10);
+      if (!isNaN(parsed) && parsed !== tgUser.id) {
+        referredBy = parsed;
+      }
+    }
+
     const newUser = {
       id: tgUser.id,
       firstName: tgUser.first_name,
       username: tgUser.username || null,
       balance: 5.00,
+      referredBy,
       createdAt: Math.floor(Date.now() / 1000),
     };
     
@@ -207,6 +219,21 @@ app.get('/api/user', async (c) => {
   return c.json({ user });
 });
 
+// Get Transactions
+app.get('/api/transactions', async (c) => {
+  const tgUser = c.get('user');
+  const db = drizzle(c.env.DB);
+  
+  const transactions = await db.select()
+    .from(schema.transactions)
+    .where(eq(schema.transactions.userId, tgUser.id))
+    .all();
+    
+  transactions.sort((a, b) => b.createdAt - a.createdAt);
+  
+  return c.json({ transactions });
+});
+
 // Claim Daily Reward
 app.post('/api/rewards/daily', async (c) => {
   const tgUser = c.get('user');
@@ -225,6 +252,7 @@ app.post('/api/rewards/daily', async (c) => {
   const isNextDay = user.lastClaimDate && (now - user.lastClaimDate) < (oneDay * 2);
   const newStreak = isNextDay ? user.dailyStreak + 1 : 1;
   const rewardAmount = Math.min(newStreak * 0.5, 3.0);
+  const rewardBoxes = Math.min(newStreak, 5);
 
   // Use Batched Statements for Atomicity
   const batchResponse = await db.batch([
@@ -232,7 +260,8 @@ app.post('/api/rewards/daily', async (c) => {
       .set({
         balance: user.balance + rewardAmount,
         dailyStreak: newStreak,
-        lastClaimDate: now
+        lastClaimDate: now,
+        giftBoxes: user.giftBoxes + rewardBoxes
       })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
@@ -324,13 +353,15 @@ app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
   const bonus20 = amount * 0.2;
   const bonus50 = Math.min(amount * 0.5, 250);
   const totalCredited = amount + bonus20 + bonus50;
+  const rewardBoxes = amount >= 100 ? 20 : 5;
   const now = Math.floor(Date.now() / 1000);
 
   const batchResponse = await db.batch([
     db.update(schema.users)
       .set({ 
         balance: user.balance + totalCredited,
-        totalDeposited: user.totalDeposited + amount // Only track raw deposit
+        totalDeposited: user.totalDeposited + amount,
+        giftBoxes: user.giftBoxes + rewardBoxes
       })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
@@ -447,6 +478,111 @@ app.post('/api/tasks/verify', async (c) => {
   ]);
 
   return c.json({ success: true, user: batchResponse[0][0] });
+});
+
+// Open Gift Box
+app.post('/api/rewards/open-box', async (c) => {
+  const tgUser = c.get('user');
+  const db = drizzle(c.env.DB);
+  
+  const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
+  if (!user) return c.json({ error: 'User not found' }, 404);
+
+  if (user.giftBoxes <= 0) {
+    return c.json({ error: 'No gift boxes available' }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+  // Random reward between $0.50 and $5.00
+  const rewardAmount = Math.round((Math.random() * 4.5 + 0.5) * 100) / 100;
+
+  const batchResponse = await db.batch([
+    db.update(schema.users)
+      .set({ 
+        balance: user.balance + rewardAmount,
+        giftBoxes: user.giftBoxes - 1
+      })
+      .where(eq(schema.users.id, tgUser.id))
+      .returning(),
+      
+    db.insert(schema.transactions).values({
+      userId: tgUser.id,
+      type: 'gift_box_reward',
+      amount: rewardAmount,
+      status: 'completed',
+      createdAt: now
+    })
+  ]);
+
+  return c.json({ success: true, rewardAmount, user: batchResponse[0][0] });
+});
+
+// Claim Deposit Milestone
+const depositMilestoneSchema = z.object({ amount: z.number().positive() });
+app.post('/api/rewards/deposit-milestone', zValidator('json', depositMilestoneSchema), async (c) => {
+  const tgUser = c.get('user');
+  const db = drizzle(c.env.DB);
+  const { amount } = c.req.valid('json');
+  
+  const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
+  if (!user) return c.json({ error: 'User not found' }, 404);
+
+  // Rewards mapping
+  const rewardsMap: Record<number, number> = {
+    50: 20,
+    100: 40,
+    250: 50,
+    500: 100,
+    1000: 200,
+    2500: 400,
+    5000: 1000
+  };
+
+  const requiredDeposit = amount;
+  const rewardAmount = rewardsMap[requiredDeposit];
+
+  if (!rewardAmount) {
+    return c.json({ error: 'Invalid milestone' }, 400);
+  }
+
+  if (user.totalDeposited < requiredDeposit) {
+    return c.json({ error: 'Deposit requirement not met' }, 400);
+  }
+
+  // Check if already claimed this exact reward amount for this milestone
+  // To keep it simple, we just check if they have a deposit_milestone transaction of this reward amount
+  const existingTx = await db.select()
+    .from(schema.transactions)
+    .where(and(
+      eq(schema.transactions.userId, tgUser.id),
+      eq(schema.transactions.type, 'deposit_milestone'),
+      eq(schema.transactions.amount, rewardAmount)
+    ))
+    .limit(1)
+    .get();
+
+  if (existingTx) {
+    return c.json({ error: 'Milestone already claimed' }, 400);
+  }
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const batchResponse = await db.batch([
+    db.update(schema.users)
+      .set({ balance: user.balance + rewardAmount })
+      .where(eq(schema.users.id, tgUser.id))
+      .returning(),
+      
+    db.insert(schema.transactions).values({
+      userId: tgUser.id,
+      type: 'deposit_milestone',
+      amount: rewardAmount,
+      status: 'completed',
+      createdAt: now
+    })
+  ]);
+
+  return c.json({ success: true, rewardAmount, user: batchResponse[0][0] });
 });
 
 export default app;

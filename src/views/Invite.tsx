@@ -14,9 +14,6 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState({ networkSize: 0, totalEarned: 0, levels: [{level:1, count:0}, {level:2, count:0}, {level:3, count:0}] });
   
-  // Use the user's telegram ID to generate the invite link
-  const inviteLink = user ? `https://t.me/AlgotradeGlobalBot?start=${user.id}` : "https://t.me/AlgotradeGlobalBot";
-
   useEffect(() => {
     const fetchReferrals = async () => {
       try {
@@ -29,10 +26,22 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
     fetchReferrals();
   }, []);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(inviteLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const referralLink = user ? `https://t.me/algo_trade_bot?start=${user.id}` : 'https://t.me/algo_trade_bot';
+
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy', err);
+    }
+  };
+
+  const shareLink = () => {
+    const text = encodeURIComponent('Join AlgoTrade and start earning with AI! 🚀');
+    const url = encodeURIComponent(referralLink);
+    window.open(`https://t.me/share/url?url=${url}&text=${text}`, '_blank');
   };
 
   return (
@@ -98,13 +107,13 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
             YOUR INVITE LINK
           </div>
           <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '16px', wordBreak: 'break-all', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
-            {inviteLink}
+            {referralLink}
           </div>
           <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-            <Button variant="primary" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <Button variant="primary" onClick={shareLink} style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
               <span>✈️</span> Telegram
             </Button>
-            <Button variant="outline" onClick={handleCopy} style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <Button variant="outline" onClick={copyLink} style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
               <span>📋</span> {copied ? 'Copied!' : 'Copy'}
             </Button>
           </div>

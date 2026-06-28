@@ -6,9 +6,10 @@ import type { TelegramUser } from '../types';
 interface ProfileProps {
   onBack: () => void;
   user: TelegramUser | null;
+  onNavigate: (view: string) => void;
 }
 
-export const Profile: React.FC<ProfileProps> = ({ onBack, user }) => {
+export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) => {
   const displayName = user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Guest';
   const displayUsername = user?.username ? `@${user.username}` : '';
   const joinDate = user?.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString() : 'today';
@@ -76,13 +77,14 @@ export const Profile: React.FC<ProfileProps> = ({ onBack, user }) => {
         <Card variant="solid" padding="none">
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {[
-              { icon: '🕒', label: 'Transaction History' },
-              { icon: '❓', label: 'Guide' },
-              { icon: '🎧', label: 'Help & Support' },
-              { icon: '⚙️', label: 'Settings' },
+              { icon: '🕒', label: 'Transaction History', view: 'transactions' },
+              { icon: '❓', label: 'Guide', view: 'guide' },
+              { icon: '🎧', label: 'Help & Support', view: 'support' },
+              { icon: '⚙️', label: 'Settings', view: 'settings' },
             ].map((item, index, arr) => (
               <div 
                 key={index} 
+                onClick={() => onNavigate(item.view)}
                 className="flex-between" 
                 style={{ 
                   padding: '16px 20px', 
