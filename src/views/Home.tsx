@@ -1,15 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Card } from '../components/ui/Card';
+import type { AppUser } from '../types';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/Header';
-import type { TelegramUser } from '../types';
+import React, { useState, useEffect } from 'react';
+import { Card } from '../components/ui/Card';
 import { api } from '../api/client';
-import { faker } from '@faker-js/faker';
 
 interface HomeProps {
   onNavigate: (view: string) => void;
   balance: string;
-  user: TelegramUser | null;
+  user: AppUser | null;
   refreshUser?: () => Promise<void>;
 }
 
@@ -19,19 +18,24 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
   const [timeToNextReward, setTimeToNextReward] = useState('00:00:00');
   const [canClaim, setCanClaim] = useState(false);
   
-  // Faker Live Activities
+  // Live Activities
   const [activities, setActivities] = useState<{ id: string; user: string; action: string; amount: number; isDeposit: boolean }[]>([]);
 
+  const FIRST_NAMES = ['Alex', 'Maria', 'John', 'Sarah', 'Mike', 'Emma', 'David', 'Lisa', 'Chris', 'Anna'];
+  const generateActivity = () => {
+    const name = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
+    const initial = String.fromCharCode(65 + Math.floor(Math.random() * 26));
+    const isDeposit = Math.random() > 0.5;
+    return {
+      id: Math.random().toString(36).slice(2),
+      user: `${name} ${initial}.`,
+      action: isDeposit ? 'deposited' : 'withdrew',
+      amount: Math.round((Math.random() * 490 + 10) * 100) / 100,
+      isDeposit
+    };
+  };
+
   useEffect(() => {
-    // Initial fake activities
-    const generateActivity = () => ({
-      id: faker.string.uuid(),
-      user: `${faker.person.firstName()} ${faker.person.lastName().charAt(0)}.`,
-      action: faker.helpers.arrayElement(['deposited', 'withdrew']),
-      amount: parseFloat(faker.finance.amount({ min: 10, max: 500, dec: 2 })),
-      isDeposit: Math.random() > 0.5
-    });
-    
     setActivities(Array.from({ length: 4 }).map(generateActivity));
     
     const interval = setInterval(() => {
@@ -80,7 +84,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
     }
   }, [user]);
 
-  const firstName = user?.first_name || 'Dr';
+  const firstName = user?.firstName || 'Dr';
 
   return (
     <div style={{ paddingBottom: '100px' }}>
@@ -123,7 +127,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
 
         {/* Actions */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
-          <Button variant="success">
+          <Button variant="success" onClick={() => onNavigate('deposit')}>
             + Deposit
           </Button>
           <Button variant="secondary" onClick={() => onNavigate('withdraw')}>
@@ -149,10 +153,11 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
         </Card>
 
         {/* Bonus Banner */}
-        <Card variant="green" style={{ marginBottom: '16px' }}>
+        <Card variant="green" style={{ marginBottom: '16px', cursor: 'pointer' }} onClick={() => onNavigate('deposit-rewards')}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '12px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '1px' }}>
             🎁 100% Deposit Bonus
           </div>
+          <h1 style={{ margin: 0, fontSize: '24px' }}>Hi, {user?.firstName || 'Trader'} 👋</h1>
           <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>Double your first deposit</h2>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', marginBottom: '16px' }}>Deposit $50+, we match it instantly.</p>
           <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontSize: '14px' }}>Claim bonus →</div>
@@ -197,7 +202,15 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
           <div style={{ background: 'var(--bg-card-solid)', width: '100%', maxWidth: 'var(--max-width)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px', padding: '24px', paddingBottom: '48px', border: '1px solid var(--border-color)' }}>
             <div className="flex-between" style={{ marginBottom: '24px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ background: 'var(--gradient-primary)', width: '48px', height: '48px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🎁</div>
+                <Card style={{ 
+                  background: 'linear-gradient(135deg, #1abc9c, #2ecc71)', 
+                  border: 'none', 
+                  marginBottom: '20px', 
+                  padding: '24px',
+                  cursor: 'pointer' 
+                }} onClick={() => onNavigate('deposit-rewards')}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#fff' }}>🎁</div>
+                </Card>
                 <div>
                   <h2 style={{ fontSize: '20px', marginBottom: '4px' }}>Daily reward</h2>
                   <p style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>Check in every day, your streak grows</p>

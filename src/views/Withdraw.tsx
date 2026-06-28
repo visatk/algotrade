@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { api } from '../api/client';
-import type { TelegramUser } from '../types';
+import type { AppUser } from '../types';
 
 interface WithdrawProps {
   onBack: () => void;
   refreshUser: () => Promise<void>;
-  user: TelegramUser | null;
+  user: AppUser | null;
 }
 
 export const Withdraw: React.FC<WithdrawProps> = ({ onBack, refreshUser, user }) => {

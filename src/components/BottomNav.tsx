@@ -5,9 +5,10 @@ type NavTab = 'home' | 'trophy' | 'deposit' | 'invest' | 'invite' | 'profile';
 interface BottomNavProps {
   activeTab: NavTab;
   onTabChange: (tab: NavTab) => void;
+  onNavigate?: (view: string) => void;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
+export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange, onNavigate }) => {
   const tabs = [
     { id: 'home', label: 'Home', icon: '🏠' },
     { id: 'trophy', label: 'Trophy', icon: '🏆' },
@@ -89,7 +90,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) 
 
   return (
     <>
-      <div style={supportIconStyle}>
+      <div style={supportIconStyle} onClick={() => onNavigate?.('support')}>
         🎧
         <div style={notificationDotStyle} />
       </div>

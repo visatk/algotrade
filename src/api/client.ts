@@ -28,21 +28,22 @@ export const api = {
   syncUser: () => fetchApi('/api/auth/sync', { method: 'POST' }),
   getUser: () => fetchApi('/api/user', { method: 'GET' }),
   claimDailyReward: () => fetchApi('/api/rewards/daily', { method: 'POST' }),
-  startInvestment: (planId: string, amount: number, expectedReturn: number, days: number) => 
+  startInvestment: (planId: string, amount: number) => 
     fetchApi('/api/investments/start', {
       method: 'POST',
-      body: JSON.stringify({ planId, amount, expectedReturn, days }),
+      body: JSON.stringify({ planId, amount }),
     }),
   getInvestments: () => fetchApi('/api/investments', { method: 'GET' }),
-  deposit: (amount: number) => fetchApi('/api/deposit', {
+  deposit: (amount: number, network: string, txid: string) => fetchApi('/api/deposit', {
     method: 'POST',
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ amount, network, txid }),
   }),
   withdraw: (amount: number, address: string) => fetchApi('/api/withdraw', {
     method: 'POST',
     body: JSON.stringify({ amount, address }),
   }),
   getReferrals: () => fetchApi('/api/referrals', { method: 'GET' }),
+  getTopReferrers: () => fetchApi('/api/referrals/top', { method: 'GET' }),
   verifyTask: () => fetchApi('/api/tasks/verify', { method: 'POST' }),
   getTransactions: () => fetchApi('/api/transactions', { method: 'GET' }),
   openGiftBox: () => fetchApi('/api/rewards/open-box', { method: 'POST' }),

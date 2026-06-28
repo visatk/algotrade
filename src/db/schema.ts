@@ -25,11 +25,14 @@ export const transactions = sqliteTable('transactions', {
   userId: integer('user_id').notNull().references(() => users.id),
   type: text('type').notNull(), // deposit, withdraw, investment_principal, investment_return, referral_bonus, daily_reward
   amount: real('amount').notNull(),
+  txid: text('txid').unique(),
   status: text('status').notNull(), // pending, completed, failed
   createdAt: integer('created_at').notNull(),
 }, (table) => {
   return {
     userIdIdx: index('transactions_user_id_idx').on(table.userId),
+    typeIdx: index('transactions_type_idx').on(table.type),
+    statusIdx: index('transactions_status_idx').on(table.status),
   };
 });
 
@@ -46,5 +49,6 @@ export const investments = sqliteTable('investments', {
   return {
     userIdIdx: index('investments_user_id_idx').on(table.userId),
     statusIdx: index('investments_status_idx').on(table.status),
+    compositeMatureIdx: index('investments_mature_idx').on(table.userId, table.status, table.endDate),
   };
 });

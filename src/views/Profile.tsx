@@ -1,16 +1,16 @@
 import React from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
-import type { TelegramUser } from '../types';
+import type { AppUser } from '../types';
 
 interface ProfileProps {
   onBack: () => void;
-  user: TelegramUser | null;
+  user: AppUser | null;
   onNavigate: (view: string) => void;
 }
 
 export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) => {
-  const displayName = user ? `${user.first_name} ${user.last_name || ''}`.trim() : 'Guest';
+  const displayName = user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Guest';
   const displayUsername = user?.username ? `@${user.username}` : '';
   const joinDate = user?.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString() : 'today';
 

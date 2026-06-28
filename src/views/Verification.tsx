@@ -3,13 +3,13 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/Header';
 import { api } from '../api/client';
-import type { TelegramUser } from '../types';
+import type { AppUser } from '../types';
 
 interface VerificationProps {
   onClose: () => void;
   onClaim: () => void;
   refreshUser: () => Promise<void>;
-  user: TelegramUser | null;
+  user: AppUser | null;
 }
 
 export const Verification: React.FC<VerificationProps> = ({ onClose, onClaim, refreshUser, user }) => {

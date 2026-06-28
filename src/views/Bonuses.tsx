@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
-import type { TelegramUser } from '../types';
+import type { AppUser } from '../types';
 import { api } from '../api/client';
 
 interface BonusesProps {
   onBack: () => void;
-  user?: TelegramUser;
+  user?: AppUser;
   refreshUser?: () => Promise<void>;
 }
 

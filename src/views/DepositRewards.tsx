@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/Button';
-import type { TelegramUser, Transaction } from '../types';
+import type { AppUser, Transaction } from '../types';
 import { api } from '../api/client';
 
 interface DepositRewardsProps {
   onBack: () => void;
   onDeposit: () => void;
-  user?: TelegramUser;
+  user?: AppUser;
   refreshUser?: () => Promise<void>;
 }
 

@@ -39,7 +39,7 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshU
     setLoading(true);
     setError(null);
     try {
-      await api.startInvestment(selectedPlan.id, amount, returnAmount, selectedPlan.days);
+      await api.startInvestment(selectedPlan.id, amount);
       if (refreshUser) {
         await refreshUser();
       }

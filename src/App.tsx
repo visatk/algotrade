@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import './index.css';
 import { api } from './api/client';
-import type { TelegramUser } from './types';
+import type { AppUser } from './types';
 import { Home } from './views/Home';
 import { Withdraw } from './views/Withdraw';
 import { InvestInfo } from './views/InvestInfo';
@@ -26,12 +26,12 @@ type NavTab = 'home' | 'trophy' | 'deposit' | 'invest' | 'invite' | 'profile';
 function App() {
   const [currentView, setCurrentView] = useState<View>('home');
   const [activeTab, setActiveTab] = useState<NavTab>('home');
-  const [user, setUser] = useState<TelegramUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [balance, setBalance] = useState('0.00');
   
   const refreshUser = async () => {
     try {
-      const data = (await api.syncUser()) as { user?: TelegramUser };
+      const data = (await api.syncUser()) as { user?: AppUser };
       if (data && data.user) {
         setUser(data.user);
         setBalance((data.user.balance || 0).toFixed(2));
@@ -61,7 +61,7 @@ function App() {
     if (tab === 'profile') setCurrentView('profile');
   };
 
-  const isMainTab = ['home', 'deposit', 'invest', 'invite', 'profile'].includes(currentView);
+  const isMainTab = ['home', 'deposit', 'invest', 'invite', 'profile', 'bonuses'].includes(currentView);
 
   return (
     <div className="fade-in" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -145,7 +145,7 @@ function App() {
 
       {/* Show BottomNav on main tabs */}
       {isMainTab && (
-        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+        <BottomNav activeTab={activeTab} onTabChange={handleTabChange} onNavigate={handleNavigate} />
       )}
     </div>
   );

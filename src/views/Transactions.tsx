@@ -34,6 +34,9 @@ export const Transactions: React.FC<TransactionsProps> = ({ onBack }) => {
       case 'investment_return': return '📈';
       case 'daily_reward': return '🎁';
       case 'verification_bonus': return '🎉';
+      case 'referral_bonus': return '👥';
+      case 'gift_box_reward': return '🎁';
+      case 'deposit_milestone': return '🏆';
       default: return '🔄';
     }
   };

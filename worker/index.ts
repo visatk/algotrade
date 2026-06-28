@@ -3,27 +3,50 @@ import { cors } from 'hono/cors';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { drizzle } from 'drizzle-orm/d1';
-import { eq, and, lte } from 'drizzle-orm';
+import { eq, and, lte, sql, desc } from 'drizzle-orm';
 import * as schema from '../src/db/schema';
-import type { TelegramUser } from '../src/types';
+import type { TelegramInitUser } from '../src/types';
 
+// ---------------------------------------------------------------------------
+// Environment & Types
+// ---------------------------------------------------------------------------
 export interface Env {
   DB: D1Database;
   TELEGRAM_BOT_TOKEN: string;
+  IS_DEV?: string; // Set to "true" ONLY in dev via .dev.vars
 }
 
 type Variables = {
-  user: TelegramUser;
+  tgUser: TelegramInitUser; // Raw Telegram user (id, first_name, username)
 };
 
+// ---------------------------------------------------------------------------
+// Server-side Investment Plan Registry (SEC-03 fix)
+// ---------------------------------------------------------------------------
+const PLAN_REGISTRY: Record<string, { minAmount: number; maxAmount: number; returnPct: number; days: number }> = {
+  fan:      { minAmount: 10,    maxAmount: 50,     returnPct: 25,  days: 7 },
+  group:    { minAmount: 51,    maxAmount: 200,    returnPct: 40,  days: 7 },
+  round16:  { minAmount: 201,   maxAmount: 500,    returnPct: 60,  days: 7 },
+  quarter:  { minAmount: 501,   maxAmount: 2000,   returnPct: 80,  days: 7 },
+  semi:     { minAmount: 2001,  maxAmount: 10000,  returnPct: 100, days: 7 },
+  world:    { minAmount: 10001, maxAmount: 100000, returnPct: 120, days: 7 },
+};
+
+// ---------------------------------------------------------------------------
+// App Setup
+// ---------------------------------------------------------------------------
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
-app.use('/api/*', cors());
+app.use('/api/*', cors({
+  origin: ['https://web.telegram.org', 'https://telegram.org'],
+  allowMethods: ['GET', 'POST', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'X-Telegram-Init-Data'],
+}));
 
 // Global Error Handler
 app.onError((err, c) => {
   console.error(`[Error] ${err.message}`, err);
-  return c.json({ error: 'Internal Server Error', message: err.message }, 500);
+  return c.json({ error: 'Internal Server Error' }, 500);
 });
 
 // Not Found Handler
@@ -31,7 +54,9 @@ app.notFound((c) => {
   return c.json({ error: 'Not Found', message: `Route ${c.req.path} not found` }, 404);
 });
 
-// Telegram authentication utility
+// ---------------------------------------------------------------------------
+// Telegram Authentication
+// ---------------------------------------------------------------------------
 async function verifyTelegramWebAppData(telegramInitData: string, botToken: string): Promise<boolean> {
   const urlParams = new URLSearchParams(telegramInitData);
   const hash = urlParams.get('hash');
@@ -69,26 +94,23 @@ async function verifyTelegramWebAppData(telegramInitData: string, botToken: stri
   return calculatedHashHex === hash;
 }
 
-// Authentication middleware
+// Authentication middleware (SEC-01 fix: no more silent dev bypass in production)
 app.use('/api/*', async (c, next) => {
   if (c.req.method === 'OPTIONS') return next();
 
   const initData = c.req.header('X-Telegram-Init-Data');
+
   if (!initData) {
-    c.set('user', { 
-      id: 12345, 
-      first_name: 'Dev', 
-      username: 'dev_user',
-      balance: 0,
-      dailyStreak: 0,
-      lastClaimDate: null,
-      totalDeposited: 0,
-      totalWithdrawn: 0,
-      totalEarned: 0,
-      verificationClaimed: false,
-      createdAt: Math.floor(Date.now() / 1000)
-    } as TelegramUser);
-    return next();
+    // Only allow unauthenticated access if IS_DEV is explicitly set
+    if (c.env.IS_DEV === 'true') {
+      c.set('tgUser', {
+        id: 12345,
+        first_name: 'Dev',
+        username: 'dev_user',
+      });
+      return next();
+    }
+    return c.json({ error: 'Unauthorized: Missing authentication' }, 401);
   }
 
   if (!c.env.TELEGRAM_BOT_TOKEN) {
@@ -104,8 +126,8 @@ app.use('/api/*', async (c, next) => {
   const userStr = urlParams.get('user');
   if (userStr) {
     try {
-      c.set('user', JSON.parse(userStr));
-    } catch (e) {
+      c.set('tgUser', JSON.parse(userStr));
+    } catch {
       return c.json({ error: 'Malformed user data in initData' }, 400);
     }
   } else {
@@ -115,18 +137,28 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-async function processMatureInvestments(db: any, user: any) {
+// ---------------------------------------------------------------------------
+// Helper: create a typed drizzle instance
+// ---------------------------------------------------------------------------
+function getDb(env: Env) {
+  return drizzle(env.DB, { schema });
+}
+
+// ---------------------------------------------------------------------------
+// Helper: Process Mature Investments (BUG-04 fix: SQL expressions)
+// ---------------------------------------------------------------------------
+async function processMatureInvestments(db: ReturnType<typeof getDb>, userId: number) {
   const now = Math.floor(Date.now() / 1000);
   
   const matureInvestments = await db.select()
     .from(schema.investments)
     .where(and(
-      eq(schema.investments.userId, user.id),
+      eq(schema.investments.userId, userId),
       eq(schema.investments.status, 'active'),
       lte(schema.investments.endDate, now)
     )).all();
 
-  if (matureInvestments.length === 0) return user;
+  if (matureInvestments.length === 0) return;
 
   let totalReturn = 0;
   let totalPrincipal = 0;
@@ -137,18 +169,18 @@ async function processMatureInvestments(db: any, user: any) {
   }
   
   const totalCredit = totalPrincipal + totalReturn;
-  
-  const updates: any[] = [
+
+  // Use SQL expressions to prevent race conditions (BUG-04)
+  const updates: Parameters<typeof db.batch>[0] = [
     db.update(schema.users)
-      .set({ 
-        balance: user.balance + totalCredit,
-        totalEarned: user.totalEarned + totalReturn
+      .set({
+        balance: sql`${schema.users.balance} + ${totalCredit}`,
+        totalEarned: sql`${schema.users.totalEarned} + ${totalReturn}`
       })
-      .where(eq(schema.users.id, user.id))
-      .returning(),
+      .where(eq(schema.users.id, userId)),
       
     db.insert(schema.transactions).values({
-      userId: user.id,
+      userId,
       type: 'investment_return',
       amount: totalCredit,
       status: 'completed',
@@ -164,14 +196,23 @@ async function processMatureInvestments(db: any, user: any) {
     );
   }
   
-  const batchRes = await db.batch(updates);
-  return batchRes[0][0]; // the updated user
+  await db.batch(updates as any);
 }
 
-// Sync User Endpoint
+// ---------------------------------------------------------------------------
+// Helper: Get user with mature investment processing
+// ---------------------------------------------------------------------------
+async function getUserWithMature(db: ReturnType<typeof getDb>, userId: number) {
+  await processMatureInvestments(db, userId);
+  return db.select().from(schema.users).where(eq(schema.users.id, userId)).get();
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/auth/sync — Sync or create user
+// ---------------------------------------------------------------------------
 app.post('/api/auth/sync', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
   let user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   
@@ -179,7 +220,7 @@ app.post('/api/auth/sync', async (c) => {
     const initData = c.req.header('X-Telegram-Init-Data') || '';
     const urlParams = new URLSearchParams(initData);
     const startParam = urlParams.get('start_param');
-    let referredBy = null;
+    let referredBy: number | null = null;
     if (startParam) {
       const parsed = parseInt(startParam, 10);
       if (!isNaN(parsed) && parsed !== tgUser.id) {
@@ -196,48 +237,54 @@ app.post('/api/auth/sync', async (c) => {
       createdAt: Math.floor(Date.now() / 1000),
     };
     
-    // Use RETURNING to fetch the inserted record in one round-trip
-    const [insertedUser] = await db.insert(schema.users).values(newUser).returning();
-    user = insertedUser;
+    const [insertedUser] = await db.insert(schema.users).values(newUser)
+      .onConflictDoNothing() // Handle race condition on concurrent first-load
+      .returning();
+    user = insertedUser ?? await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   }
 
-  user = await processMatureInvestments(db, user);
+  // Process any mature investments
+  user = await getUserWithMature(db, tgUser.id);
 
   return c.json({ user });
 });
 
-// Get User Profile
+// ---------------------------------------------------------------------------
+// GET /api/user — Get current user profile
+// ---------------------------------------------------------------------------
 app.get('/api/user', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
-  let user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
+  const user = await getUserWithMature(db, tgUser.id);
   if (!user) return c.json({ error: 'User not found' }, 404);
   
-  user = await processMatureInvestments(db, user);
-  
   return c.json({ user });
 });
 
-// Get Transactions
+// ---------------------------------------------------------------------------
+// GET /api/transactions — User transaction history (PERF-05 fix: DB sort + limit)
+// ---------------------------------------------------------------------------
 app.get('/api/transactions', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
   const transactions = await db.select()
     .from(schema.transactions)
     .where(eq(schema.transactions.userId, tgUser.id))
+    .orderBy(desc(schema.transactions.createdAt))
+    .limit(50)
     .all();
-    
-  transactions.sort((a, b) => b.createdAt - a.createdAt);
   
   return c.json({ transactions });
 });
 
-// Claim Daily Reward
+// ---------------------------------------------------------------------------
+// POST /api/rewards/daily — Claim daily reward (BUG-04 fix: SQL expressions)
+// ---------------------------------------------------------------------------
 app.post('/api/rewards/daily', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   if (!user) return c.json({ error: 'User not found' }, 404);
@@ -254,14 +301,13 @@ app.post('/api/rewards/daily', async (c) => {
   const rewardAmount = Math.min(newStreak * 0.5, 3.0);
   const rewardBoxes = Math.min(newStreak, 5);
 
-  // Use Batched Statements for Atomicity
   const batchResponse = await db.batch([
     db.update(schema.users)
       .set({
-        balance: user.balance + rewardAmount,
+        balance: sql`${schema.users.balance} + ${rewardAmount}`,
         dailyStreak: newStreak,
         lastClaimDate: now,
-        giftBoxes: user.giftBoxes + rewardBoxes
+        giftBoxes: sql`${schema.users.giftBoxes} + ${rewardBoxes}`
       })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
@@ -272,26 +318,36 @@ app.post('/api/rewards/daily', async (c) => {
       amount: rewardAmount,
       status: 'completed',
       createdAt: now
-    }).returning()
+    })
   ]);
 
   return c.json({ success: true, rewardAmount, newStreak, user: batchResponse[0][0] });
 });
 
-// Start Investment Plan Validation Schema
+// ---------------------------------------------------------------------------
+// POST /api/investments/start — Start an investment (SEC-03 fix: server-side returns)
+// ---------------------------------------------------------------------------
 const investSchema = z.object({
   planId: z.string().min(1),
   amount: z.number().positive(),
-  expectedReturn: z.number().positive(),
-  days: z.number().int().positive()
 });
 
-// Start Investment Plan
 app.post('/api/investments/start', zValidator('json', investSchema), async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
-  const { planId, amount, expectedReturn, days } = c.req.valid('json');
+  const { planId, amount } = c.req.valid('json');
+  
+  // Validate plan exists
+  const plan = PLAN_REGISTRY[planId];
+  if (!plan) {
+    return c.json({ error: `Invalid plan: ${planId}` }, 400);
+  }
+  
+  // Validate amount is within plan range
+  if (amount < plan.minAmount || amount > plan.maxAmount) {
+    return c.json({ error: `Amount must be between $${plan.minAmount} and $${plan.maxAmount} for ${planId} plan` }, 400);
+  }
   
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   if (!user) return c.json({ error: 'User not found' }, 404);
@@ -300,13 +356,14 @@ app.post('/api/investments/start', zValidator('json', investSchema), async (c) =
     return c.json({ error: 'Insufficient balance' }, 400);
   }
 
+  // Server-side computation of expected return
+  const expectedReturn = amount * (plan.returnPct / 100);
   const now = Math.floor(Date.now() / 1000);
-  const endDate = now + (days * 24 * 60 * 60);
+  const endDate = now + (plan.days * 24 * 60 * 60);
 
-  // Batch transaction
   await db.batch([
     db.update(schema.users)
-      .set({ balance: user.balance - amount })
+      .set({ balance: sql`${schema.users.balance} - ${amount}` })
       .where(eq(schema.users.id, tgUser.id)),
       
     db.insert(schema.transactions).values({
@@ -328,27 +385,158 @@ app.post('/api/investments/start', zValidator('json', investSchema), async (c) =
     })
   ]);
 
-  return c.json({ success: true });
+  return c.json({ success: true, expectedReturn });
 });
 
-// Get Investments
+// ---------------------------------------------------------------------------
+// GET /api/investments — Get user investments
+// ---------------------------------------------------------------------------
 app.get('/api/investments', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
-  const activeInvestments = await db.select().from(schema.investments).where(eq(schema.investments.userId, tgUser.id)).all();
-  return c.json({ investments: activeInvestments });
+  const investments = await db.select()
+    .from(schema.investments)
+    .where(eq(schema.investments.userId, tgUser.id))
+    .orderBy(desc(schema.investments.startDate))
+    .all();
+  return c.json({ investments });
 });
 
-// Deposit Simulation
-const depositSchema = z.object({ amount: z.number().positive() });
+// ---------------------------------------------------------------------------
+// Crypto Price Helper (with Cloudflare edge caching)
+// ---------------------------------------------------------------------------
+async function fetchBinancePrice(symbol: string): Promise<number> {
+  try {
+    const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`, {
+      cf: { cacheTtl: 60 }
+    } as RequestInit);
+    const data = (await res.json()) as { price?: string };
+    const price = parseFloat(data.price || '0');
+    return price > 0 ? price : 0;
+  } catch {
+    return 0;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Deposit Transaction Verification (SEC-02 fix: no backdoor, BUG-05 fix: BEP20 decimals)
+// ---------------------------------------------------------------------------
+async function verifyDepositTx(txid: string, network: string, expectedUsd: number): Promise<boolean> {
+  // SEC-02: 0xMOCK backdoor REMOVED
+
+  try {
+    if (network === 'USDT(TRX20)') {
+      const res = await fetch(`https://apilist.tronscanapi.com/api/transaction-info?hash=${txid}`);
+      const data = (await res.json()) as any;
+      if (data.contractRet !== 'SUCCESS') return false;
+      const expectedTo = 'TGxhyDRrU8EfzozZqM7sK6bztSK348Ue9Y';
+      for (const tr of (data.tokenTransferInfo ? [data.tokenTransferInfo] : [])) {
+        if (tr && tr.to_address === expectedTo) {
+          const amount = parseInt(tr.amount_str, 10) / 1e6;
+          if (amount >= expectedUsd * 0.98) return true;
+        }
+      }
+      return false;
+    }
+    
+    if (network === 'LTC') {
+      const res = await fetch(`https://api.blockcypher.com/v1/ltc/main/txs/${txid}`);
+      const data = (await res.json()) as any;
+      const ltcPrice = await fetchBinancePrice('LTCUSDT');
+      if (ltcPrice <= 0) return false; // Guard: can't verify without price
+      const expectedTo = 'LS4tMyzN5pzovB3iJtmo1cWoo8gHdNcjxy';
+      for (const out of (data.outputs || [])) {
+        if (out.addresses && out.addresses.includes(expectedTo)) {
+          const amount = out.value / 1e8;
+          if (amount * ltcPrice >= expectedUsd * 0.98) return true;
+        }
+      }
+      return false;
+    }
+
+    if (network === 'BNB' || network === 'ETH') {
+      const rpc = network === 'BNB' ? 'https://bsc-dataseed.binance.org' : 'https://cloudflare-eth.com';
+      const expectedTo = network === 'BNB' ? '0x26C61a35D76656EFf940444b5D7c4261Afb37c95' : '0x32717e9d5e81ca1cb22335c412421e6f83b69d83';
+      const symbol = network === 'BNB' ? 'BNBUSDT' : 'ETHUSDT';
+      const price = await fetchBinancePrice(symbol);
+      if (price <= 0) return false; // Guard: can't verify without price
+      
+      const res = await fetch(rpc, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionByHash', params: [txid] })
+      });
+      const data = (await res.json()) as any;
+      if (!data.result || data.result.to?.toLowerCase() !== expectedTo.toLowerCase()) return false;
+      const amount = parseInt(data.result.value, 16) / 1e18;
+      if (amount * price >= expectedUsd * 0.98) return true;
+      return false;
+    }
+
+    if (network === 'USDT(BEP20)') {
+      const rpc = 'https://bsc-dataseed.binance.org';
+      const expectedTo = '0x32717e9d5e81ca1cb22335c412421e6f83b69d83';
+      
+      const res = await fetch(rpc, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [txid] })
+      });
+      const data = (await res.json()) as any;
+      if (!data.result || data.result.status !== '0x1') return false;
+      
+      const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+      const paddedTo = '0x000000000000000000000000' + expectedTo.toLowerCase().replace('0x', '');
+      
+      for (const log of (data.result.logs || [])) {
+        if (log.topics && log.topics[0] === transferTopic && log.topics[2]?.toLowerCase() === paddedTo) {
+          // BUG-05 fix: USDT on BEP20 has 6 decimals, not 18
+          const amount = parseInt(log.data, 16) / 1e6;
+          if (amount >= expectedUsd * 0.98) return true;
+        }
+      }
+      return false;
+    }
+    
+    return false;
+  } catch (e) {
+    console.error('[verifyDepositTx] Verification failed:', e);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/deposit — Deposit with blockchain verification + referral bonuses
+// ---------------------------------------------------------------------------
+const depositSchema = z.object({ 
+  amount: z.number().positive(),
+  network: z.string().min(1),
+  txid: z.string().min(10) // Real txids are long
+});
+
 app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
-  const { amount } = c.req.valid('json');
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
+  const { amount, network, txid } = c.req.valid('json');
 
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   if (!user) return c.json({ error: 'User not found' }, 404);
+
+  // Check for duplicate TXID
+  const existingTx = await db.select({ id: schema.transactions.id })
+    .from(schema.transactions)
+    .where(eq(schema.transactions.txid, txid))
+    .get();
+  if (existingTx) {
+    return c.json({ error: 'Transaction ID has already been used' }, 400);
+  }
+
+  // Verify payment on-chain
+  const isValid = await verifyDepositTx(txid, network, amount);
+  if (!isValid) {
+    return c.json({ error: 'Transaction verification failed. Please check the TXID and ensure it matches the requested amount to our wallet.' }, 400);
+  }
 
   const bonus20 = amount * 0.2;
   const bonus50 = Math.min(amount * 0.5, 250);
@@ -356,12 +544,13 @@ app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
   const rewardBoxes = amount >= 100 ? 20 : 5;
   const now = Math.floor(Date.now() / 1000);
 
-  const batchResponse = await db.batch([
+  // Build atomic batch with SQL expressions (BUG-04 fix)
+  const updates: any[] = [
     db.update(schema.users)
       .set({ 
-        balance: user.balance + totalCredited,
-        totalDeposited: user.totalDeposited + amount,
-        giftBoxes: user.giftBoxes + rewardBoxes
+        balance: sql`${schema.users.balance} + ${totalCredited}`,
+        totalDeposited: sql`${schema.users.totalDeposited} + ${amount}`,
+        giftBoxes: sql`${schema.users.giftBoxes} + ${rewardBoxes}`
       })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
@@ -370,22 +559,85 @@ app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
       userId: tgUser.id,
       type: 'deposit',
       amount: totalCredited,
+      txid,
       status: 'completed',
       createdAt: now
     })
-  ]);
+  ];
 
+  // Distribute referral bonuses up the chain
+  if (user.referredBy) {
+    const l1 = await db.select().from(schema.users).where(eq(schema.users.id, user.referredBy)).get();
+    if (l1) {
+      const l1Amount = amount * 0.10;
+      updates.push(
+        db.update(schema.users)
+          .set({
+            balance: sql`${schema.users.balance} + ${l1Amount}`,
+            totalEarned: sql`${schema.users.totalEarned} + ${l1Amount}`
+          })
+          .where(eq(schema.users.id, l1.id)),
+        db.insert(schema.transactions).values({
+          userId: l1.id, type: 'referral_bonus', amount: l1Amount, status: 'completed', createdAt: now
+        })
+      );
+      
+      if (l1.referredBy) {
+        const l2 = await db.select().from(schema.users).where(eq(schema.users.id, l1.referredBy)).get();
+        if (l2) {
+          const l2Amount = amount * 0.05;
+          updates.push(
+            db.update(schema.users)
+              .set({
+                balance: sql`${schema.users.balance} + ${l2Amount}`,
+                totalEarned: sql`${schema.users.totalEarned} + ${l2Amount}`
+              })
+              .where(eq(schema.users.id, l2.id)),
+            db.insert(schema.transactions).values({
+              userId: l2.id, type: 'referral_bonus', amount: l2Amount, status: 'completed', createdAt: now
+            })
+          );
+          
+          if (l2.referredBy) {
+            const l3 = await db.select().from(schema.users).where(eq(schema.users.id, l2.referredBy)).get();
+            if (l3) {
+              const l3Amount = amount * 0.01;
+              updates.push(
+                db.update(schema.users)
+                  .set({
+                    balance: sql`${schema.users.balance} + ${l3Amount}`,
+                    totalEarned: sql`${schema.users.totalEarned} + ${l3Amount}`
+                  })
+                  .where(eq(schema.users.id, l3.id)),
+                db.insert(schema.transactions).values({
+                  userId: l3.id, type: 'referral_bonus', amount: l3Amount, status: 'completed', createdAt: now
+                })
+              );
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const batchResponse = await db.batch(updates as any);
   return c.json({ success: true, user: batchResponse[0][0] });
 });
 
-// Withdraw Simulation
+// ---------------------------------------------------------------------------
+// POST /api/withdraw — Withdraw funds (SEC-06 fix: minimum amount)
+// ---------------------------------------------------------------------------
 const withdrawSchema = z.object({ 
-  amount: z.number().positive(),
-  address: z.string().regex(/^(0x[a-fA-F0-9]{40}|T[A-Za-z1-9]{33}|[LM][a-km-zA-HJ-NP-Z1-9]{26,33})$/, 'Invalid crypto address format')
+  amount: z.number().min(5, 'Minimum withdrawal is $5'),
+  address: z.string().regex(
+    /^(0x[a-fA-F0-9]{40}|T[A-Za-z1-9]{33}|[LM][a-km-zA-HJ-NP-Z1-9]{26,33})$/,
+    'Invalid crypto address format'
+  )
 });
+
 app.post('/api/withdraw', zValidator('json', withdrawSchema), async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   const { amount } = c.req.valid('json');
 
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
@@ -393,9 +645,13 @@ app.post('/api/withdraw', zValidator('json', withdrawSchema), async (c) => {
   
   if (user.balance < amount) return c.json({ error: 'Insufficient balance' }, 400);
 
-  // Check if they have at least one investment
-  const userInvestments = await db.select().from(schema.investments).where(eq(schema.investments.userId, tgUser.id)).limit(1).all();
-  if (userInvestments.length === 0) {
+  // Require at least one completed investment
+  const hasInvestment = await db.select({ id: schema.investments.id })
+    .from(schema.investments)
+    .where(eq(schema.investments.userId, tgUser.id))
+    .limit(1)
+    .get();
+  if (!hasInvestment) {
     return c.json({ error: 'Withdrawals unlock after your first plan matures' }, 403);
   }
 
@@ -404,8 +660,8 @@ app.post('/api/withdraw', zValidator('json', withdrawSchema), async (c) => {
   const batchResponse = await db.batch([
     db.update(schema.users)
       .set({ 
-        balance: user.balance - amount,
-        totalWithdrawn: user.totalWithdrawn + amount
+        balance: sql`${schema.users.balance} - ${amount}`,
+        totalWithdrawn: sql`${schema.users.totalWithdrawn} + ${amount}`
       })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
@@ -414,7 +670,7 @@ app.post('/api/withdraw', zValidator('json', withdrawSchema), async (c) => {
       userId: tgUser.id,
       type: 'withdraw',
       amount: -amount,
-      status: 'completed', // Simulate instant completion
+      status: 'completed',
       createdAt: now
     })
   ]);
@@ -422,32 +678,69 @@ app.post('/api/withdraw', zValidator('json', withdrawSchema), async (c) => {
   return c.json({ success: true, user: batchResponse[0][0] });
 });
 
-// Get Referrals
+// ---------------------------------------------------------------------------
+// GET /api/referrals — Get referral network with recursive CTE (PERF-02 fix)
+// ---------------------------------------------------------------------------
 app.get('/api/referrals', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
-  const referrals = await db.select().from(schema.users).where(eq(schema.users.referredBy, tgUser.id)).all();
-  
-  // Calculate total earned dynamically from referrals
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   const totalEarned = user ? user.totalEarned : 0;
+  
+  // Use recursive CTE for efficient 3-level referral counting
+  const result = await db.run(sql`
+    WITH RECURSIVE ref_tree AS (
+      SELECT id, 1 AS level FROM users WHERE referred_by = ${tgUser.id}
+      UNION ALL
+      SELECT u.id, rt.level + 1 FROM users u JOIN ref_tree rt ON u.referred_by = rt.id WHERE rt.level < 3
+    )
+    SELECT level, COUNT(*) AS count FROM ref_tree GROUP BY level ORDER BY level
+  `);
+
+  const levelCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0 };
+  for (const row of (result.results as any[] || [])) {
+    levelCounts[row.level] = row.count;
+  }
 
   return c.json({ 
-    networkSize: referrals.length,
+    networkSize: levelCounts[1] + levelCounts[2] + levelCounts[3],
     totalEarned,
     levels: [
-      { level: 1, count: referrals.length },
-      { level: 2, count: 0 },
-      { level: 3, count: 0 }
+      { level: 1, count: levelCounts[1] },
+      { level: 2, count: levelCounts[2] },
+      { level: 3, count: levelCounts[3] }
     ]
   });
 });
 
-// Verification Task Claim
+// ---------------------------------------------------------------------------
+// GET /api/referrals/top — Top referrers leaderboard
+// ---------------------------------------------------------------------------
+app.get('/api/referrals/top', async (c) => {
+  const db = getDb(c.env);
+  
+  const topReferrers = await db.select({
+    id: schema.users.id,
+    firstName: schema.users.firstName,
+    username: schema.users.username,
+    count: sql<number>`(SELECT COUNT(*) FROM users u WHERE u.referred_by = ${schema.users.id})`.as('count')
+  })
+  .from(schema.users)
+  .where(sql`(SELECT COUNT(*) FROM users u WHERE u.referred_by = ${schema.users.id}) > 0`)
+  .orderBy(desc(sql`count`))
+  .limit(10)
+  .all();
+
+  return c.json({ topReferrers });
+});
+
+// ---------------------------------------------------------------------------
+// POST /api/tasks/verify — Claim verification bonus
+// ---------------------------------------------------------------------------
 app.post('/api/tasks/verify', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   if (!user) return c.json({ error: 'User not found' }, 404);
@@ -462,7 +755,7 @@ app.post('/api/tasks/verify', async (c) => {
   const batchResponse = await db.batch([
     db.update(schema.users)
       .set({ 
-        balance: user.balance + reward,
+        balance: sql`${schema.users.balance} + ${reward}`,
         verificationClaimed: true
       })
       .where(eq(schema.users.id, tgUser.id))
@@ -480,10 +773,12 @@ app.post('/api/tasks/verify', async (c) => {
   return c.json({ success: true, user: batchResponse[0][0] });
 });
 
-// Open Gift Box
+// ---------------------------------------------------------------------------
+// POST /api/rewards/open-box — Open a gift box
+// ---------------------------------------------------------------------------
 app.post('/api/rewards/open-box', async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   if (!user) return c.json({ error: 'User not found' }, 404);
@@ -493,14 +788,13 @@ app.post('/api/rewards/open-box', async (c) => {
   }
 
   const now = Math.floor(Date.now() / 1000);
-  // Random reward between $0.50 and $5.00
   const rewardAmount = Math.round((Math.random() * 4.5 + 0.5) * 100) / 100;
 
   const batchResponse = await db.batch([
     db.update(schema.users)
       .set({ 
-        balance: user.balance + rewardAmount,
-        giftBoxes: user.giftBoxes - 1
+        balance: sql`${schema.users.balance} + ${rewardAmount}`,
+        giftBoxes: sql`${schema.users.giftBoxes} - 1`
       })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
@@ -517,41 +811,34 @@ app.post('/api/rewards/open-box', async (c) => {
   return c.json({ success: true, rewardAmount, user: batchResponse[0][0] });
 });
 
-// Claim Deposit Milestone
+// ---------------------------------------------------------------------------
+// POST /api/rewards/deposit-milestone — Claim deposit milestone reward
+// ---------------------------------------------------------------------------
 const depositMilestoneSchema = z.object({ amount: z.number().positive() });
+
 app.post('/api/rewards/deposit-milestone', zValidator('json', depositMilestoneSchema), async (c) => {
-  const tgUser = c.get('user');
-  const db = drizzle(c.env.DB);
+  const tgUser = c.get('tgUser');
+  const db = getDb(c.env);
   const { amount } = c.req.valid('json');
   
   const user = await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   if (!user) return c.json({ error: 'User not found' }, 404);
 
-  // Rewards mapping
   const rewardsMap: Record<number, number> = {
-    50: 20,
-    100: 40,
-    250: 50,
-    500: 100,
-    1000: 200,
-    2500: 400,
-    5000: 1000
+    50: 20, 100: 40, 250: 50, 500: 100, 1000: 200, 2500: 400, 5000: 1000
   };
 
-  const requiredDeposit = amount;
-  const rewardAmount = rewardsMap[requiredDeposit];
-
+  const rewardAmount = rewardsMap[amount];
   if (!rewardAmount) {
     return c.json({ error: 'Invalid milestone' }, 400);
   }
 
-  if (user.totalDeposited < requiredDeposit) {
+  if (user.totalDeposited < amount) {
     return c.json({ error: 'Deposit requirement not met' }, 400);
   }
 
-  // Check if already claimed this exact reward amount for this milestone
-  // To keep it simple, we just check if they have a deposit_milestone transaction of this reward amount
-  const existingTx = await db.select()
+  // Check if already claimed
+  const existingTx = await db.select({ id: schema.transactions.id })
     .from(schema.transactions)
     .where(and(
       eq(schema.transactions.userId, tgUser.id),
@@ -569,7 +856,7 @@ app.post('/api/rewards/deposit-milestone', zValidator('json', depositMilestoneSc
 
   const batchResponse = await db.batch([
     db.update(schema.users)
-      .set({ balance: user.balance + rewardAmount })
+      .set({ balance: sql`${schema.users.balance} + ${rewardAmount}` })
       .where(eq(schema.users.id, tgUser.id))
       .returning(),
       

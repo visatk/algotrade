@@ -87,7 +87,6 @@ export const Header: React.FC<HeaderProps> = ({ onClose, showBack, onBack, title
         {!showBack && (
           <div style={iconCircleStyle}>
             🔔
-            <div style={notificationBadgeStyle}>1</div>
           </div>
         )}
         <div style={iconCircleStyle}>

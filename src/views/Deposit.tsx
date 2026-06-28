@@ -14,6 +14,7 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [txid, setTxid] = useState('');
 
   const addresses: Record<string, string> = {
     'USDT(TRX20)': 'TGxhyDRrU8EfzozZqM7sK6bztSK348Ue9Y',
@@ -30,14 +31,18 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
   };
 
   const handleDeposit = async () => {
+    if (!txid.trim()) {
+      setError('Please enter the transaction hash (TXID)');
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
-      await api.deposit(amount);
+      await api.deposit(amount, network, txid.trim());
       await refreshUser();
       onBack();
     } catch (err: any) {
-      setError(err.message || 'Deposit failed');
+      setError(err.message || 'Deposit verification failed');
     } finally {
       setLoading(false);
     }
@@ -235,6 +240,29 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
           </div>
         </Card>
 
+        <div style={{ marginTop: '24px' }}>
+          <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '12px' }}>Transaction Hash (TXID)</div>
+          <Card variant="solid" style={{ marginBottom: '16px' }}>
+            <input 
+              type="text" 
+              value={txid} 
+              onChange={(e) => setTxid(e.target.value)}
+              placeholder="e.g. 0x123..."
+              style={{
+                width: '100%',
+                background: 'transparent',
+                border: 'none',
+                color: '#fff',
+                fontSize: '14px',
+                outline: 'none',
+              }}
+            />
+          </Card>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            After sending the funds, paste the transaction hash here to verify your deposit.
+          </div>
+        </div>
+
         {error && (
           <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '16px', textAlign: 'center', background: 'rgba(231, 76, 60, 0.1)', padding: '12px', borderRadius: '8px' }}>
             {error}
@@ -258,7 +286,7 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
               opacity: loading ? 0.7 : 1
             }}
           >
-            {loading ? 'Processing...' : 'I Have Paid'}
+            {loading ? 'Verifying...' : 'Verify Payment'}
           </button>
         </div>
       </div>

@@ -3,16 +3,24 @@ import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
-import type { TelegramUser } from '../types';
+import type { AppUser } from '../types';
 
 interface InviteProps {
   onBack: () => void;
-  user: TelegramUser | null;
+  user: AppUser | null;
+}
+
+interface TopReferrer {
+  id: number;
+  firstName: string;
+  username: string | null;
+  count: number;
 }
 
 export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
   const [copied, setCopied] = useState(false);
   const [stats, setStats] = useState({ networkSize: 0, totalEarned: 0, levels: [{level:1, count:0}, {level:2, count:0}, {level:3, count:0}] });
+  const [topReferrers, setTopReferrers] = useState<TopReferrer[]>([]);
   
   useEffect(() => {
     const fetchReferrals = async () => {
@@ -23,7 +31,18 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
         console.error('Failed to fetch referrals:', err);
       }
     };
+
+    const fetchTop = async () => {
+      try {
+        const data = (await api.getTopReferrers()) as { topReferrers: TopReferrer[] };
+        setTopReferrers(data.topReferrers || []);
+      } catch (err) {
+        console.error('Failed to fetch top referrers:', err);
+      }
+    };
+
     fetchReferrals();
+    fetchTop();
   }, []);
 
   const referralLink = user ? `https://t.me/algo_trade_bot?start=${user.id}` : 'https://t.me/algo_trade_bot';
@@ -194,13 +213,47 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
           </div>
         </Card>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '32px', color: 'var(--text-secondary)', fontSize: '14px' }}>
-          <span style={{ color: '#f1c40f' }}>🏆</span>
-          <span>Top referrer this month earned <strong style={{ color: '#f1c40f' }}>$12,847</strong></span>
+        {/* Top Referrers Leaderboard */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
+          <span>🏆</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>TOP REFERRERS</span>
         </div>
 
+        <Card variant="solid" style={{ marginBottom: '32px', overflow: 'hidden', padding: 0 }}>
+          {topReferrers.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {topReferrers.map((referrer, idx) => {
+                let badgeColor = 'var(--text-secondary)';
+                if (idx === 0) badgeColor = '#FFD700'; // Gold
+                if (idx === 1) badgeColor = '#C0C0C0'; // Silver
+                if (idx === 2) badgeColor = '#CD7F32'; // Bronze
+
+                return (
+                  <div key={referrer.id} style={{ display: 'flex', alignItems: 'center', padding: '16px 20px', borderBottom: idx !== topReferrers.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                    <div style={{ width: '30px', fontWeight: 'bold', color: badgeColor, fontSize: idx < 3 ? '18px' : '14px' }}>
+                      {idx < 3 ? '👑' : `#${idx + 1}`}
+                    </div>
+                    <div style={{ flex: 1, marginLeft: '12px' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '16px' }}>{referrer.firstName}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{referrer.username ? `@${referrer.username}` : `ID: ${referrer.id}`}</div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <div style={{ fontWeight: 'bold', fontSize: '16px', color: 'var(--accent-green)' }}>{referrer.count}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>invites</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>
+              No referrers yet. Be the first to invite!
+            </div>
+          )}
+        </Card>
+
         <div style={{ textAlign: 'center', color: 'var(--accent-blue)', fontWeight: 'bold', fontSize: '14px' }}>
-          📈 Start referring to build your network!
+          📈 Start referring to build your network and climb the leaderboard!
         </div>
 
       </div>
