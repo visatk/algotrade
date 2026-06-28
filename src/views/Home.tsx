@@ -103,7 +103,9 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
         <div className="flex-between" style={{ marginBottom: '32px' }}>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #2c3e50, #000)', border: '2px solid #34495e', overflow: 'hidden' }}>
-              {user?.photo_url && <img src={user.photo_url} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />}
+              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #2c3e50, #3498db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                👤
+              </div>
             </div>
             <div>
               <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Your AI is analyzing the market</div>

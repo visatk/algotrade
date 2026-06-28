@@ -10,7 +10,7 @@ interface ProfileProps {
 }
 
 export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) => {
-  const displayName = user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Guest';
+  const displayName = user ? user.firstName : 'Guest';
   const displayUsername = user?.username ? `@${user.username}` : '';
   const joinDate = user?.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString() : 'today';
 
@@ -23,13 +23,9 @@ export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) =>
         <Card variant="solid" style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-secondary)', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.1)' }}>
-              {user?.photo_url ? (
-                <img src={user.photo_url} alt="Profile" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
                 <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #2c3e50, #3498db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
                   👤
                 </div>
-              )}
             </div>
             <div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{displayName}</div>

@@ -46,22 +46,7 @@ export const Header: React.FC<HeaderProps> = ({ onClose, showBack, onBack, title
     color: '#fff',
   };
 
-  const notificationBadgeStyle: React.CSSProperties = {
-    position: 'absolute',
-    top: '-2px',
-    right: '-2px',
-    background: '#e74c3c',
-    color: '#fff',
-    fontSize: '10px',
-    fontWeight: 'bold',
-    width: '16px',
-    height: '16px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '2px solid var(--bg-primary)',
-  };
+
 
   return (
     <header style={headerStyle}>

@@ -171,7 +171,7 @@ async function processMatureInvestments(db: ReturnType<typeof getDb>, userId: nu
   const totalCredit = totalPrincipal + totalReturn;
 
   // Use SQL expressions to prevent race conditions (BUG-04)
-  const updates: Parameters<typeof db.batch>[0] = [
+  const updates: any[] = [
     db.update(schema.users)
       .set({
         balance: sql`${schema.users.balance} + ${totalCredit}`,
