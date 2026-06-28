@@ -1,0 +1,182 @@
+import React, { useState } from 'react';
+import { Card } from '../components/ui/Card';
+import { Header } from '../components/Header';
+import { Button } from '../components/ui/Button';
+
+interface InviteProps {
+  onBack: () => void;
+}
+
+export const Invite: React.FC<InviteProps> = ({ onBack }) => {
+  const [copied, setCopied] = useState(false);
+  const inviteLink = "https://t.me/AlgotradeGlobalBot?start=5668179742";
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(inviteLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div style={{ paddingBottom: '120px', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <Header showBack onBack={onBack} />
+      
+      <div style={{ padding: '0 20px', flex: 1 }}>
+        <h1 style={{ fontSize: '24px', marginBottom: '8px' }}>$4 per friend · withdraw anytime</h1>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px', lineHeight: '1.5' }}>
+          Every friend who joins puts <strong>$4</strong> into your wallet, unlocked the moment they make their first deposit. Plus <strong>15%</strong> · 5% · 2% across 3 levels, forever.
+        </p>
+
+        {/* Referral Wallet Card */}
+        <Card variant="blue-gradient" style={{ marginBottom: '16px' }}>
+          <div className="flex-between" style={{ marginBottom: '16px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>🎁</span>
+              <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>REFERRAL WALLET</span>
+            </div>
+            <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '20px' }}>📚</span>
+            </div>
+          </div>
+          
+          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>$0.00</div>
+          <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '24px' }}>
+            $4 per friend, locked until their first deposit.
+          </div>
+
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
+            <div style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px', opacity: 0.8 }}>
+              YOUR NETWORK · 0 PEOPLE
+            </div>
+            
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { level: 1, pct: '15%' },
+                { level: 2, pct: '5%' },
+                { level: 3, pct: '2%' }
+              ].map(l => (
+                <div key={l.level} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '8px', fontWeight: 'bold' }}>LEVEL {l.level}</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '10px', opacity: 0.6 }}>{l.pct}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </Card>
+
+        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+          <Button variant="outline" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <span>✨</span> How it works
+          </Button>
+          <Button variant="outline" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+            <span>👥</span> My referrals
+          </Button>
+        </div>
+
+        {/* Invite Link Card */}
+        <Card variant="solid" style={{ marginBottom: '32px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px' }}>
+            YOUR INVITE LINK
+          </div>
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '16px', borderRadius: '12px', marginBottom: '16px', wordBreak: 'break-all', fontFamily: 'monospace', color: 'var(--text-secondary)' }}>
+            {inviteLink}
+          </div>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+            <Button variant="primary" style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              <span>✈️</span> Telegram
+            </Button>
+            <Button variant="outline" onClick={handleCopy} style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}>
+              <span>📋</span> {copied ? 'Copied!' : 'Copy'}
+            </Button>
+          </div>
+          <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <span>🔗</span> Share Invite Link
+          </div>
+        </Card>
+
+        {/* Referral Earnings */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
+          <span>$</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>YOUR REFERRAL EARNINGS</span>
+        </div>
+
+        <Card variant="solid" style={{ marginBottom: '32px' }}>
+          <div className="flex-between" style={{ marginBottom: '24px' }}>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-green)' }}>$0.00</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>lifetime, all levels</span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {[
+              { level: 1, pct: '15% (+10% first)', color: 'var(--accent-blue)', bg: 'rgba(88, 101, 242, 0.2)' },
+              { level: 2, pct: '5%', color: 'var(--accent-purple)', bg: 'rgba(138, 43, 226, 0.2)' },
+              { level: 3, pct: '2%', color: 'var(--accent-green)', bg: 'rgba(46, 204, 113, 0.2)' }
+            ].map(l => (
+              <div key={l.level} className="flex-between">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: l.bg, color: l.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold' }}>
+                    {l.level}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '2px' }}>Level {l.level} · {l.pct}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>0 people</div>
+                  </div>
+                </div>
+                <div style={{ fontWeight: 'bold', color: 'var(--accent-green)' }}>
+                  +$0.00
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Milestones */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', color: 'var(--text-secondary)' }}>
+          <span>🏆</span>
+          <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>MILESTONES</span>
+        </div>
+
+        <Card variant="solid" style={{ marginBottom: '32px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+            {[
+              { title: 'Bronze Referrer', req: '5 direct referrals' },
+              { title: 'Silver Referrer', req: '15 direct referrals' },
+              { title: 'Gold Referrer', req: '50 direct referrals' },
+            ].map((m, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '16px', opacity: 0.5 }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', color: 'var(--text-secondary)' }}>
+                  🔒
+                </div>
+                <div>
+                  <div style={{ fontWeight: 'bold', fontSize: '16px', marginBottom: '2px' }}>{m.title}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{m.req}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ borderTop: '1px solid var(--border-color)', margin: '16px -20px' }} />
+          
+          <div className="flex-between" style={{ marginBottom: '8px' }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Progress to <strong style={{ color: '#fff' }}>Bronze Referrer</strong></span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>0/5</span>
+          </div>
+          <div style={{ height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+            <div style={{ width: '0%', height: '100%', background: 'var(--text-primary)' }} />
+          </div>
+        </Card>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', marginBottom: '32px', color: 'var(--text-secondary)', fontSize: '14px' }}>
+          <span style={{ color: '#f1c40f' }}>🏆</span>
+          <span>Top referrer this month earned <strong style={{ color: '#f1c40f' }}>$12,847</strong></span>
+        </div>
+
+        <div style={{ textAlign: 'center', color: 'var(--accent-blue)', fontWeight: 'bold', fontSize: '14px' }}>
+          📈 Start referring to build your network!
+        </div>
+
+      </div>
+    </div>
+  );
+};
