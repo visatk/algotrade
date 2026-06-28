@@ -97,7 +97,7 @@ function App() {
         <DepositRewards 
           onBack={() => setCurrentView('deposit')} 
           onDeposit={() => setCurrentView('deposit')} 
-          user={user}
+          user={user || undefined}
           refreshUser={refreshUser}
         />
       )}
@@ -131,7 +131,7 @@ function App() {
       )}
       
       {currentView === 'bonuses' && (
-        <Bonuses onBack={() => setCurrentView('home')} user={user} refreshUser={refreshUser} />
+        <Bonuses onBack={() => setCurrentView('home')} user={user || undefined} refreshUser={refreshUser} />
       )}
       
       {currentView === 'support' && (

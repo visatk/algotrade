@@ -4,9 +4,10 @@ interface HeaderProps {
   onClose?: () => void;
   showBack?: boolean;
   onBack?: () => void;
+  title?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onClose, showBack, onBack }) => {
+export const Header: React.FC<HeaderProps> = ({ onClose, showBack, onBack, title }) => {
   const headerStyle: React.CSSProperties = {
     display: 'flex',
     justifyContent: 'space-between',
