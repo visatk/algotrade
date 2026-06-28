@@ -77,6 +77,12 @@ export const Header: React.FC<HeaderProps> = ({ onClose, showBack, onBack, title
         )}
       </div>
 
+      {title && (
+        <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', fontWeight: 'bold', fontSize: '18px' }}>
+          {title}
+        </div>
+      )}
+
       <div style={rightActionsStyle}>
         {!showBack && (
           <div style={iconCircleStyle}>
