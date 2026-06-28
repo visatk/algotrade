@@ -43,28 +43,28 @@ export const Profile: React.FC<ProfileProps> = ({ onBack, user }) => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
               <span>💼</span> AVAILABLE
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>$0.65</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>${(user?.balance || 0).toFixed(2)}</div>
           </Card>
           
           <Card variant="solid">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
               <span>📈</span> EARNED
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-green)' }}>$6.15</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-green)' }}>${(user?.totalEarned || 0).toFixed(2)}</div>
           </Card>
 
           <Card variant="solid">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-purple)', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
               <span>↗️</span> WITHDRAWN
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-purple)' }}>$0.00</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-purple)' }}>${(user?.totalWithdrawn || 0).toFixed(2)}</div>
           </Card>
 
           <Card variant="solid">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
               <span>🛡️</span> DEPOSITED
             </div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>$0.00</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>${(user?.totalDeposited || 0).toFixed(2)}</div>
           </Card>
         </div>
 

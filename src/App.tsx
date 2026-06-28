@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import './index.css';
 import WebApp from '@twa-dev/sdk';
+import { api } from './api/client';
 import { Home } from './views/Home';
 import { Withdraw } from './views/Withdraw';
 import { InvestInfo } from './views/InvestInfo';
@@ -22,29 +23,38 @@ export interface TelegramUser {
   last_name?: string;
   username?: string;
   photo_url?: string;
+  balance: number;
+  totalDeposited: number;
+  totalWithdrawn: number;
+  totalEarned: number;
+  dailyStreak: number;
+  lastClaimDate: number | null;
+  verificationClaimed: boolean;
 }
 
 function App() {
   const [currentView, setCurrentView] = useState<View>('home');
   const [activeTab, setActiveTab] = useState<NavTab>('home');
   const [user, setUser] = useState<TelegramUser | null>(null);
+  const [balance, setBalance] = useState('0.00');
+  const [loading, setLoading] = useState(true);
   
-  useEffect(() => {
-    // Attempt to get user from Telegram Mini App SDK
-    if (WebApp.initDataUnsafe && WebApp.initDataUnsafe.user) {
-      setUser(WebApp.initDataUnsafe.user as TelegramUser);
-    } else {
-      // Fallback for local development outside of Telegram
-      setUser({
-        id: 0,
-        first_name: 'Guest',
-        username: 'guest_user',
-      });
+  const refreshUser = async () => {
+    try {
+      const data = await api.syncUser();
+      setUser(data.user);
+      setBalance(data.user.balance.toFixed(2));
+    } catch (err) {
+      console.error('Failed to sync user:', err);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    refreshUser();
   }, []);
 
-  // Mock data
-  const [balance, setBalance] = useState('5.00');
   const currentBalanceNum = parseFloat(balance);
 
   const handleNavigate = (view: string) => {
@@ -66,11 +76,11 @@ function App() {
   return (
     <div className="fade-in" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
       {currentView === 'home' && (
-        <Home balance={balance} onNavigate={handleNavigate} user={user} />
+        <Home balance={balance} onNavigate={handleNavigate} user={user} refreshUser={refreshUser} />
       )}
       
       {currentView === 'withdraw' && (
-        <Withdraw onBack={() => setCurrentView('home')} />
+        <Withdraw onBack={() => setCurrentView('home')} refreshUser={refreshUser} user={user} />
       )}
       
       {currentView === 'invest-info' && (
@@ -83,15 +93,14 @@ function App() {
       {currentView === 'verification' && (
         <Verification 
           onClose={() => setCurrentView('home')}
-          onClaim={() => {
-            setBalance('170.00');
-            setCurrentView('home');
-          }}
+          refreshUser={refreshUser}
+          user={user}
+          onClaim={() => setCurrentView('home')}
         />
       )}
 
       {currentView === 'deposit' && (
-        <Deposit onBack={() => setCurrentView('home')} />
+        <Deposit onBack={() => setCurrentView('home')} refreshUser={refreshUser} />
       )}
 
       {currentView === 'deposit-rewards' && (
@@ -105,11 +114,12 @@ function App() {
         <Invest 
           onBack={() => setCurrentView('home')} 
           currentBalance={currentBalanceNum} 
+          refreshUser={refreshUser}
         />
       )}
 
       {currentView === 'invite' && (
-        <Invite onBack={() => setCurrentView('home')} />
+        <Invite onBack={() => setCurrentView('home')} user={user} />
       )}
 
       {currentView === 'profile' && (

@@ -1,18 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/Header';
 import type { TelegramUser } from '../App';
+import { api } from '../api/client';
 
 interface HomeProps {
   onNavigate: (view: string) => void;
   balance: string;
   user: TelegramUser | null;
+  refreshUser?: () => Promise<void>;
 }
 
-export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user }) => {
-  const [showDailyReward, setShowDailyReward] = useState(true);
+export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUser }) => {
+  const [showDailyReward, setShowDailyReward] = useState(false);
+  const [claiming, setClaiming] = useState(false);
   
+  useEffect(() => {
+    if (user) {
+      const now = Math.floor(Date.now() / 1000);
+      const oneDay = 24 * 60 * 60;
+      if (!user.lastClaimDate || (now - user.lastClaimDate) >= oneDay) {
+        setShowDailyReward(true);
+      }
+    }
+  }, [user]);
+
   const firstName = user?.first_name || 'Dr';
 
   return (
@@ -154,8 +167,21 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user }) => {
               ))}
             </div>
             
-            <Button fullWidth onClick={() => setShowDailyReward(false)}>
-              Claim $0.50
+            <Button fullWidth onClick={async () => {
+              if (refreshUser) {
+                setClaiming(true);
+                try {
+                  await api.claimDailyReward();
+                  await refreshUser();
+                } catch (e) {
+                  console.error(e);
+                } finally {
+                  setClaiming(false);
+                }
+              }
+              setShowDailyReward(false);
+            }} disabled={claiming}>
+              {claiming ? 'Claiming...' : 'Claim Reward'}
             </Button>
           </div>
         </div>

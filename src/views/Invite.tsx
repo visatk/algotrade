@@ -1,15 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/Button';
+import { api } from '../api/client';
+import { TelegramUser } from '../App';
 
 interface InviteProps {
   onBack: () => void;
+  user: TelegramUser | null;
 }
 
-export const Invite: React.FC<InviteProps> = ({ onBack }) => {
+export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
   const [copied, setCopied] = useState(false);
-  const inviteLink = "https://t.me/AlgotradeGlobalBot?start=5668179742";
+  const [stats, setStats] = useState({ networkSize: 0, totalEarned: 0, levels: [{level:1, count:0}, {level:2, count:0}, {level:3, count:0}] });
+  
+  // Use the user's telegram ID to generate the invite link
+  const inviteLink = user ? `https://t.me/AlgotradeGlobalBot?start=${user.id}` : "https://t.me/AlgotradeGlobalBot";
+
+  useEffect(() => {
+    const fetchReferrals = async () => {
+      try {
+        const data = await api.getReferrals();
+        setStats(data);
+      } catch (err) {
+        console.error('Failed to fetch referrals:', err);
+      }
+    };
+    fetchReferrals();
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(inviteLink);
@@ -39,25 +57,25 @@ export const Invite: React.FC<InviteProps> = ({ onBack }) => {
             </div>
           </div>
           
-          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>$0.00</div>
+          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '8px' }}>${stats.totalEarned.toFixed(2)}</div>
           <div style={{ fontSize: '14px', opacity: 0.8, marginBottom: '24px' }}>
             $4 per friend, locked until their first deposit.
           </div>
 
           <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '16px' }}>
             <div style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', marginBottom: '12px', opacity: 0.8 }}>
-              YOUR NETWORK · 0 PEOPLE
+              YOUR NETWORK · {stats.networkSize} PEOPLE
             </div>
             
             <div style={{ display: 'flex', gap: '8px' }}>
               {[
-                { level: 1, pct: '15%' },
-                { level: 2, pct: '5%' },
-                { level: 3, pct: '2%' }
+                { level: 1, pct: '15%', count: stats.levels[0]?.count || 0 },
+                { level: 2, pct: '5%', count: stats.levels[1]?.count || 0 },
+                { level: 3, pct: '2%', count: stats.levels[2]?.count || 0 }
               ].map(l => (
                 <div key={l.level} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px 8px', textAlign: 'center' }}>
                   <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '8px', fontWeight: 'bold' }}>LEVEL {l.level}</div>
-                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>0</div>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>{l.count}</div>
                   <div style={{ fontSize: '10px', opacity: 0.6 }}>{l.pct}</div>
                 </div>
               ))}
@@ -103,15 +121,15 @@ export const Invite: React.FC<InviteProps> = ({ onBack }) => {
 
         <Card variant="solid" style={{ marginBottom: '32px' }}>
           <div className="flex-between" style={{ marginBottom: '24px' }}>
-            <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-green)' }}>$0.00</span>
+            <span style={{ fontSize: '32px', fontWeight: 800, color: 'var(--accent-green)' }}>${stats.totalEarned.toFixed(2)}</span>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>lifetime, all levels</span>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {[
-              { level: 1, pct: '15% (+10% first)', color: 'var(--accent-blue)', bg: 'rgba(88, 101, 242, 0.2)' },
-              { level: 2, pct: '5%', color: 'var(--accent-purple)', bg: 'rgba(138, 43, 226, 0.2)' },
-              { level: 3, pct: '2%', color: 'var(--accent-green)', bg: 'rgba(46, 204, 113, 0.2)' }
+              { level: 1, pct: '15% (+10% first)', count: stats.levels[0]?.count || 0, color: 'var(--accent-blue)', bg: 'rgba(88, 101, 242, 0.2)' },
+              { level: 2, pct: '5%', count: stats.levels[1]?.count || 0, color: 'var(--accent-purple)', bg: 'rgba(138, 43, 226, 0.2)' },
+              { level: 3, pct: '2%', count: stats.levels[2]?.count || 0, color: 'var(--accent-green)', bg: 'rgba(46, 204, 113, 0.2)' }
             ].map(l => (
               <div key={l.level} className="flex-between">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -120,11 +138,11 @@ export const Invite: React.FC<InviteProps> = ({ onBack }) => {
                   </div>
                   <div>
                     <div style={{ fontWeight: 'bold', fontSize: '14px', marginBottom: '2px' }}>Level {l.level} · {l.pct}</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>0 people</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{l.count} people</div>
                   </div>
                 </div>
                 <div style={{ fontWeight: 'bold', color: 'var(--accent-green)' }}>
-                  +$0.00
+                  +${(l.count * 4).toFixed(2)}
                 </div>
               </div>
             ))}

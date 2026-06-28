@@ -1,14 +1,34 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Header } from '../components/Header';
+import { api } from '../api/client';
+import { TelegramUser } from '../App';
 
 interface VerificationProps {
   onClose: () => void;
   onClaim: () => void;
+  refreshUser: () => Promise<void>;
+  user: TelegramUser | null;
 }
 
-export const Verification: React.FC<VerificationProps> = ({ onClose, onClaim }) => {
+export const Verification: React.FC<VerificationProps> = ({ onClose, onClaim, refreshUser, user }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleClaim = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await api.verifyTask();
+      await refreshUser();
+      onClaim();
+    } catch (err: any) {
+      setError(err.message || 'Verification failed. Did you join?');
+    } finally {
+      setLoading(false);
+    }
+  };
   const taskStyle = (bg: string, border: string) => ({
     background: bg,
     border: `1px solid ${border}`,
@@ -112,12 +132,24 @@ export const Verification: React.FC<VerificationProps> = ({ onClose, onClaim }) 
             </div>
           </div>
         </Card>
+
+        {error && (
+          <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '16px', textAlign: 'center', background: 'rgba(231, 76, 60, 0.1)', padding: '12px', borderRadius: '8px' }}>
+            {error}
+          </div>
+        )}
       </div>
 
       <div style={{ padding: '20px', background: 'var(--bg-primary)', position: 'sticky', bottom: 0 }}>
-        <Button fullWidth onClick={onClaim}>
-          🎁 Claim my $165 bonus &gt;
-        </Button>
+        {user?.verificationClaimed ? (
+          <Button fullWidth variant="outline" disabled style={{ opacity: 0.5, borderColor: 'var(--accent-green)', color: 'var(--accent-green)' }}>
+            ✓ Bonus Claimed
+          </Button>
+        ) : (
+          <Button fullWidth onClick={handleClaim} disabled={loading}>
+            {loading ? 'Verifying...' : '🎁 Claim my $165 bonus >'}
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -2,15 +2,19 @@ import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/Button';
+import { api } from '../api/client';
 
 interface InvestProps {
   onBack: () => void;
   currentBalance: number;
+  refreshUser?: () => Promise<void>;
 }
 
-export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance }) => {
+export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshUser }) => {
   const [amount, setAmount] = useState<number>(100);
   const [selectedPlanId, setSelectedPlanId] = useState<string>('group');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const pills = [100, 250, 500, 1000, 2500];
 
@@ -30,6 +34,23 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance }) => {
   const needsMore = amount > currentBalance;
   const deficit = amount - currentBalance;
 
+  const handleInvest = async () => {
+    if (needsMore) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await api.startInvestment(selectedPlan.id, amount, returnAmount, selectedPlan.days);
+      if (refreshUser) {
+        await refreshUser();
+      }
+      onBack();
+    } catch (err: any) {
+      setError(err.message || 'Failed to start investment');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const inputStyle: React.CSSProperties = {
     width: '100%',
     background: 'transparent',
@@ -40,7 +61,7 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance }) => {
     outline: 'none',
   };
 
-  const pillStyle = (selected: boolean): React.CSSProperties => ({
+  const pillStyle = (selected: boolean): React.CSSProperties = ({
     padding: '8px 16px',
     borderRadius: '8px',
     background: selected ? 'rgba(46, 204, 113, 0.1)' : 'rgba(255,255,255,0.05)',
@@ -62,11 +83,17 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance }) => {
           Choose amount → AI trades → you collect profit
         </p>
 
+        {error && (
+          <div style={{ background: 'rgba(231, 76, 60, 0.1)', color: '#e74c3c', padding: '12px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', border: '1px solid rgba(231, 76, 60, 0.3)' }}>
+            {error}
+          </div>
+        )}
+
         <div style={{ marginBottom: '32px' }}>
           <Card variant="solid" style={{ marginBottom: '16px' }}>
             <div className="flex-between" style={{ marginBottom: '12px' }}>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Investment amount</span>
-              <span style={{ fontSize: '12px', color: 'var(--accent-green)', fontWeight: 'bold' }}>Max $1</span>
+              <span style={{ fontSize: '12px', color: 'var(--accent-green)', fontWeight: 'bold' }}>Max ${currentBalance.toFixed(2)}</span>
             </div>
             
             <div className="flex-between" style={{ marginBottom: '16px' }}>
@@ -91,7 +118,6 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance }) => {
                   style={pillStyle(amount === p)}
                   onClick={() => {
                     setAmount(p);
-                    // auto-select plan based on amount for demo purposes
                     if (p <= 50) setSelectedPlanId('fan');
                     else if (p <= 200) setSelectedPlanId('group');
                     else if (p <= 500) setSelectedPlanId('round16');
@@ -211,12 +237,20 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance }) => {
       </div>
 
       <div style={{ position: 'fixed', bottom: '80px', left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 'var(--max-width)', padding: '0 20px', zIndex: 99 }}>
-        <Button variant="success" fullWidth style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '12px 20px', boxShadow: '0 -10px 40px rgba(11, 12, 16, 0.9)' }}>
-          <div style={{ fontSize: '12px', color: 'rgba(0,0,0,0.6)', fontWeight: 'bold', marginBottom: '2px' }}>
+        <Button 
+          variant={needsMore ? 'primary' : 'success'} 
+          fullWidth 
+          onClick={handleInvest}
+          disabled={loading || needsMore}
+          style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '12px 20px', opacity: (loading || needsMore) ? 0.7 : 1, boxShadow: '0 -10px 40px rgba(11, 12, 16, 0.9)' }}
+        >
+          <div style={{ fontSize: '12px', color: needsMore ? '#fff' : 'rgba(0,0,0,0.6)', fontWeight: 'bold', marginBottom: '2px' }}>
             +${returnAmount.toFixed(2)} · {selectedPlan.returnPct}% in {selectedPlan.days} days
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-            <span style={{ fontSize: '18px', fontWeight: 800 }}>Deposit & Start</span>
+            <span style={{ fontSize: '18px', fontWeight: 800 }}>
+              {loading ? 'Processing...' : needsMore ? 'Insufficient Balance' : 'Start Plan'}
+            </span>
             <span style={{ fontSize: '20px' }}>→</span>
           </div>
         </Button>

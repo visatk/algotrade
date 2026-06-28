@@ -1,13 +1,31 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
+import { api } from '../api/client';
 
 interface DepositProps {
   onBack: () => void;
+  refreshUser: () => Promise<void>;
 }
 
-export const Deposit: React.FC<DepositProps> = ({ onBack }) => {
+export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
   const [amount, setAmount] = useState<number>(50);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDeposit = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await api.deposit(amount);
+      await refreshUser();
+      onBack();
+    } catch (err: any) {
+      setError(err.message || 'Deposit failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const pills = [25, 50, 100, 250, 500];
 
@@ -149,6 +167,33 @@ export const Deposit: React.FC<DepositProps> = ({ onBack }) => {
             ))}
           </div>
         </Card>
+
+        {error && (
+          <div style={{ color: '#e74c3c', fontSize: '14px', marginTop: '16px', textAlign: 'center', background: 'rgba(231, 76, 60, 0.1)', padding: '12px', borderRadius: '8px' }}>
+            {error}
+          </div>
+        )}
+
+        <div style={{ marginTop: '24px' }}>
+          <button 
+            onClick={handleDeposit}
+            disabled={loading}
+            style={{ 
+              width: '100%', 
+              padding: '16px', 
+              background: 'var(--accent-blue)', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '16px', 
+              fontSize: '16px', 
+              fontWeight: 'bold',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1
+            }}
+          >
+            {loading ? 'Processing...' : 'Simulate Deposit Now'}
+          </button>
+        </div>
       </div>
     </div>
   );
