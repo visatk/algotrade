@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
-import { TelegramUser } from '../App';
+import type { TelegramUser } from '../App';
 
 interface ProfileProps {
   onBack: () => void;
