@@ -1,15 +1,13 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
-import { api } from '../api/client';
 import { Copy, QrCode } from 'lucide-react';
 
 interface DepositProps {
   onBack: () => void;
-  refreshUser: () => Promise<void>;
 }
 
-export const Deposit: React.FC<DepositProps> = ({ onBack, refreshUser }) => {
+export const Deposit: React.FC<DepositProps> = ({ onBack }) => {
   const [amount, setAmount] = useState<number>(50);
   const [crypto, setCrypto] = useState<string>('USDT');
   const [network, setNetwork] = useState<string>('BEP20');

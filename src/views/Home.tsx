@@ -1,6 +1,5 @@
 import type { AppUser } from '../types';
 import { Button } from '../components/ui/Button';
-import { Header } from '../components/Header';
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { api } from '../api/client';
