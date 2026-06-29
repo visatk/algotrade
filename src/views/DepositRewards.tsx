@@ -51,8 +51,8 @@ export const DepositRewards: React.FC<DepositRewardsProps> = ({ onBack, onDeposi
       if (refreshUser) {
         await refreshUser();
       }
-    } catch (err: any) {
-      setError(err.message || 'Failed to claim milestone');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to claim milestone');
     } finally {
       setLoading(false);
     }

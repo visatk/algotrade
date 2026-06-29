@@ -4,6 +4,7 @@ import { Header } from '../components/Header';
 import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { api } from '../api/client';
+import { ArrowUpRight, Plus, Package } from 'lucide-react';
 
 interface HomeProps {
   onNavigate: (view: string) => void;
@@ -17,35 +18,6 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
   const [claiming, setClaiming] = useState(false);
   const [timeToNextReward, setTimeToNextReward] = useState('00:00:00');
   const [canClaim, setCanClaim] = useState(false);
-  
-  // Live Activities
-  const [activities, setActivities] = useState<{ id: string; user: string; action: string; amount: number; isDeposit: boolean }[]>([]);
-
-  const FIRST_NAMES = ['Alex', 'Maria', 'John', 'Sarah', 'Mike', 'Emma', 'David', 'Lisa', 'Chris', 'Anna'];
-  const generateActivity = () => {
-    const name = FIRST_NAMES[Math.floor(Math.random() * FIRST_NAMES.length)];
-    const initial = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-    const isDeposit = Math.random() > 0.5;
-    return {
-      id: Math.random().toString(36).slice(2),
-      user: `${name} ${initial}.`,
-      action: isDeposit ? 'deposited' : 'withdrew',
-      amount: Math.round((Math.random() * 490 + 10) * 100) / 100,
-      isDeposit
-    };
-  };
-
-  useEffect(() => {
-    setActivities(Array.from({ length: 4 }).map(generateActivity));
-    
-    const interval = setInterval(() => {
-      setActivities(prev => {
-        const newAct = generateActivity();
-        return [newAct, ...prev.slice(0, 4)];
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -84,57 +56,100 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
     }
   }, [user]);
 
-  const firstName = user?.firstName || 'Dr';
-
+  const firstName = user?.firstName || 'Trader';
   return (
     <div style={{ paddingBottom: '100px' }}>
-      <Header />
       
-      <div style={{ padding: '0 20px' }}>
-        {/* Logo Banner */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
-          <div style={{ background: '#fff', borderRadius: '8px', padding: '4px' }}>
-            <span style={{ color: '#000', fontWeight: 'bold', fontSize: '12px' }}>Algo</span>
+      <div style={{ padding: '20px' }}>
+        {/* Header - ALGOMIND & SPIN */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ background: '#fff', borderRadius: '8px', padding: '4px' }}>
+              <span style={{ color: '#000', fontWeight: 'bold', fontSize: '12px' }}>Algo</span>
+            </div>
+            <span style={{ fontSize: '20px', fontWeight: 800 }}>ALGOMIND</span>
           </div>
-          <span style={{ fontSize: '20px', fontWeight: 800, background: 'linear-gradient(90deg, #fff, #8b92a5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>ALGOTRADE</span>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '16px', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+            <span style={{ fontSize: '16px' }}>🎡</span>
+            <span style={{ fontWeight: 'bold', fontSize: '12px', color: '#f39c12' }}>SPIN</span>
+          </div>
         </div>
 
         {/* Profile Info */}
-        <div className="flex-between" style={{ marginBottom: '32px' }}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'linear-gradient(135deg, #2c3e50, #000)', border: '2px solid #34495e', overflow: 'hidden' }}>
-              <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #2c3e50, #3498db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
-                👤
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Your AI is analyzing the market</div>
-              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>{firstName}</div>
-            </div>
-          </div>
-          <div style={{ background: 'var(--accent-green-bg)', color: 'var(--accent-green)', padding: '4px 12px', borderRadius: '16px', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--accent-green)' }} className="animate-pulse" />
-            AI Active
+        <div style={{ marginBottom: '24px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Your AI is analyzing the market</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{firstName}</div>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)' }} className="animate-pulse" />
           </div>
         </div>
 
         {/* Balance Section */}
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>Total Balance</div>
-          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '12px' }}>${balance}</div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '12px', fontSize: '12px' }}>
-            🎁 ${balance} joining bonus
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>TOTAL BALANCE</div>
+          <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '12px', lineHeight: 1 }}>${balance}</div>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(138, 43, 226, 0.1)', color: '#b19cd9', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', border: '1px solid rgba(138, 43, 226, 0.3)' }}>
+            🎁 $5.50 locked bonus
           </div>
+        </div>
+
+        {/* 3-Column Stats */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>AVAILABLE</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>$1</div>
+          </Card>
+          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>INVEST</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>$5</div>
+          </Card>
+          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>EARNED</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-green)' }}>$6</div>
+          </Card>
         </div>
 
         {/* Actions */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
-          <Button variant="success" onClick={() => onNavigate('deposit')}>
-            + Deposit
-          </Button>
-          <Button variant="secondary" onClick={() => onNavigate('withdraw')}>
-            ↗ Withdraw
-          </Button>
+          <button 
+            onClick={() => onNavigate('deposit')}
+            style={{ 
+              background: 'linear-gradient(135deg, #2ecc71, #27ae60)', 
+              color: '#fff', 
+              border: 'none', 
+              borderRadius: '16px', 
+              padding: '16px', 
+              fontSize: '16px', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            <Plus size={20} /> Deposit
+          </button>
+          <button 
+            onClick={() => onNavigate('withdraw')}
+            style={{ 
+              background: 'var(--bg-card-solid)', 
+              color: '#fff', 
+              border: '1px solid var(--border-color)', 
+              borderRadius: '16px', 
+              padding: '16px', 
+              fontSize: '16px', 
+              fontWeight: 'bold',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              cursor: 'pointer'
+            }}
+          >
+            <ArrowUpRight size={20} color="var(--accent-purple)" /> Withdraw
+          </button>
         </div>
 
         {/* Path to $165 */}
@@ -159,16 +174,16 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '12px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '1px' }}>
             🎁 100% Deposit Bonus
           </div>
-          <h1 style={{ margin: 0, fontSize: '24px' }}>Hi, {user?.firstName || 'Trader'} 👋</h1>
+          <h1 style={{ margin: 0, fontSize: '24px' }}>Hi, {firstName} 👋</h1>
           <h2 style={{ fontSize: '24px', marginBottom: '8px' }}>Double your first deposit</h2>
           <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', marginBottom: '16px' }}>Deposit $50+, we match it instantly.</p>
-          <div style={{ color: 'var(--accent-green)', fontWeight: 600, fontSize: '14px' }}>Claim bonus →</div>
+          <div style={{ color: '#000', fontWeight: 600, fontSize: '14px', background: '#fff', padding: '8px 16px', borderRadius: '24px', display: 'inline-block' }}>Claim bonus →</div>
         </Card>
 
-        <Card variant="solid" style={{ marginBottom: '32px' }} onClick={() => setShowDailyReward(true)}>
+        <Card variant="solid" style={{ marginBottom: '16px' }} onClick={() => setShowDailyReward(true)}>
           <div className="flex-between" style={{ cursor: 'pointer' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ background: 'var(--gradient-primary)', width: '32px', height: '32px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🎁</div>
+              <div style={{ background: 'var(--gradient-primary)', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🎁</div>
               <div>
                 <div style={{ fontWeight: 'bold' }}>Daily reward</div>
                 <div style={{ fontSize: '12px', color: canClaim ? 'var(--accent-green)' : 'var(--text-secondary)' }}>
@@ -177,25 +192,32 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ color: '#e67e22' }}>🔥 {user?.dailyStreak || 0}</span>
+              <span style={{ color: '#f39c12', fontWeight: 'bold' }}>🔥 {user?.dailyStreak || 0}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>&gt;</span>
+            </div>
+          </div>
+        </Card>
+        
+        {/* Gift Boxes */}
+        <Card variant="solid" style={{ marginBottom: '32px' }}>
+          <div className="flex-between" style={{ cursor: 'pointer' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ background: 'rgba(243, 156, 18, 0.2)', color: '#f39c12', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Package size={20} />
+              </div>
+              <div>
+                <div style={{ fontWeight: 'bold' }}>Open your gift boxes</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  0 boxes available
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ color: 'var(--text-secondary)' }}>&gt;</span>
             </div>
           </div>
         </Card>
 
-        {/* Live Activity */}
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Live Activity</div>
-          <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}>
-            {activities.map(act => (
-              <Card key={act.id} variant="solid" padding="sm" style={{ minWidth: '200px', flexShrink: 0 }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {act.user} {act.action} <span style={{ color: act.isDeposit ? 'var(--accent-green)' : 'var(--accent-blue)' }}>${act.amount}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Daily Reward Modal Overlay */}
@@ -256,7 +278,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
                 } catch (e) {
                   console.error(e);
                 } finally {
-                  setClaiming(false);
+                  setClaiming(true);
                 }
               }
               setShowDailyReward(false);

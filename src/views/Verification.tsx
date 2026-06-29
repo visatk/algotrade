@@ -23,8 +23,8 @@ export const Verification: React.FC<VerificationProps> = ({ onClose, onClaim, re
       await api.verifyTask();
       await refreshUser();
       onClaim();
-    } catch (err: any) {
-      setError(err.message || 'Verification failed. Did you join?');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Verification failed. Did you join?');
     } finally {
       setLoading(false);
     }

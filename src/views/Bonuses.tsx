@@ -29,8 +29,8 @@ export const Bonuses: React.FC<BonusesProps> = ({ onBack, user, refreshUser }) =
         await refreshUser();
       }
       setReward(res.rewardAmount);
-    } catch (err: any) {
-      setError(err.message || 'Failed to open box');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to open box');
     } finally {
       setOpening(false);
     }

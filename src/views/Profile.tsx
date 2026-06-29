@@ -10,7 +10,7 @@ interface ProfileProps {
 }
 
 export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) => {
-  const displayName = user ? user.firstName : 'Guest';
+  const displayName = user?.firstName || 'Guest';
   const displayUsername = user?.username ? `@${user.username}` : '';
   const joinDate = user?.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString() : 'today';
 

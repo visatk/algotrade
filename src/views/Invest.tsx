@@ -44,8 +44,8 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshU
         await refreshUser();
       }
       onBack();
-    } catch (err: any) {
-      setError(err.message || 'Failed to start investment');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to start investment');
     } finally {
       setLoading(false);
     }

@@ -32,8 +32,8 @@ export const Withdraw: React.FC<WithdrawProps> = ({ onBack, refreshUser, user })
       await api.withdraw(Number(amount), address);
       await refreshUser();
       onBack();
-    } catch (err: any) {
-      setError(err.message || 'Withdrawal failed');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Withdrawal failed');
     } finally {
       setLoading(false);
     }

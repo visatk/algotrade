@@ -171,7 +171,7 @@ async function processMatureInvestments(db: ReturnType<typeof getDb>, userId: nu
   const totalCredit = totalPrincipal + totalReturn;
 
   // Use SQL expressions to prevent race conditions (BUG-04)
-  const updates: any[] = [
+  const updates: unknown[] = [
     db.update(schema.users)
       .set({
         balance: sql`${schema.users.balance} + ${totalCredit}`,
@@ -196,7 +196,7 @@ async function processMatureInvestments(db: ReturnType<typeof getDb>, userId: nu
     );
   }
   
-  await db.batch(updates as any);
+  await db.batch(updates as unknown as Parameters<typeof db.batch>[0]);
 }
 
 // ---------------------------------------------------------------------------
@@ -428,7 +428,7 @@ async function verifyDepositTx(txid: string, network: string, expectedUsd: numbe
   try {
     if (network === 'USDT(TRX20)') {
       const res = await fetch(`https://apilist.tronscanapi.com/api/transaction-info?hash=${txid}`);
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as { contractRet?: string; tokenTransferInfo?: { to_address: string, amount_str: string } };
       if (data.contractRet !== 'SUCCESS') return false;
       const expectedTo = 'TGxhyDRrU8EfzozZqM7sK6bztSK348Ue9Y';
       for (const tr of (data.tokenTransferInfo ? [data.tokenTransferInfo] : [])) {
@@ -442,7 +442,7 @@ async function verifyDepositTx(txid: string, network: string, expectedUsd: numbe
     
     if (network === 'LTC') {
       const res = await fetch(`https://api.blockcypher.com/v1/ltc/main/txs/${txid}`);
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as { outputs?: { addresses?: string[], value: number }[] };
       const ltcPrice = await fetchBinancePrice('LTCUSDT');
       if (ltcPrice <= 0) return false; // Guard: can't verify without price
       const expectedTo = 'LS4tMyzN5pzovB3iJtmo1cWoo8gHdNcjxy';
@@ -467,7 +467,7 @@ async function verifyDepositTx(txid: string, network: string, expectedUsd: numbe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionByHash', params: [txid] })
       });
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as { result?: { to?: string, value: string } };
       if (!data.result || data.result.to?.toLowerCase() !== expectedTo.toLowerCase()) return false;
       const amount = parseInt(data.result.value, 16) / 1e18;
       if (amount * price >= expectedUsd * 0.98) return true;
@@ -483,7 +483,7 @@ async function verifyDepositTx(txid: string, network: string, expectedUsd: numbe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [txid] })
       });
-      const data = (await res.json()) as any;
+      const data = (await res.json()) as { result?: { status: string, logs?: { topics: string[], data: string }[] } };
       if (!data.result || data.result.status !== '0x1') return false;
       
       const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
@@ -545,7 +545,7 @@ app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
   const now = Math.floor(Date.now() / 1000);
 
   // Build atomic batch with SQL expressions (BUG-04 fix)
-  const updates: any[] = [
+  const updates: unknown[] = [
     db.update(schema.users)
       .set({ 
         balance: sql`${schema.users.balance} + ${totalCredited}`,
@@ -620,7 +620,7 @@ app.post('/api/deposit', zValidator('json', depositSchema), async (c) => {
     }
   }
 
-  const batchResponse = await db.batch(updates as any);
+  const batchResponse = await db.batch(updates as unknown as Parameters<typeof db.batch>[0]);
   return c.json({ success: true, user: batchResponse[0][0] });
 });
 
@@ -699,7 +699,7 @@ app.get('/api/referrals', async (c) => {
   `);
 
   const levelCounts: Record<number, number> = { 1: 0, 2: 0, 3: 0 };
-  for (const row of (result.results as any[] || [])) {
+  for (const row of (result.results as { level: number; count: number }[] || [])) {
     levelCounts[row.level] = row.count;
   }
 

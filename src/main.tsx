@@ -12,13 +12,13 @@ try {
   console.error("WebApp init error:", e);
 }
 
-class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: any}> {
+class ErrorBoundary extends Component<{children: ReactNode}, {hasError: boolean, error: Error | null}> {
   constructor(props: {children: ReactNode}) {
     super(props);
     this.state = { hasError: false, error: null };
   }
-  static getDerivedStateFromError(error: any) {
-    return { hasError: true, error };
+  static getDerivedStateFromError(error: unknown) {
+    return { hasError: true, error: error instanceof Error ? error : new Error(String(error)) };
   }
   render() {
     if (this.state.hasError) {

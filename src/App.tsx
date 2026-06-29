@@ -4,7 +4,7 @@ import { api } from './api/client';
 import type { AppUser } from './types';
 import { Home } from './views/Home';
 import { Withdraw } from './views/Withdraw';
-import { InvestInfo } from './views/InvestInfo';
+import { Stats } from './views/Stats';
 import { Verification } from './views/Verification';
 import { Deposit } from './views/Deposit';
 import { DepositRewards } from './views/DepositRewards';
@@ -18,8 +18,8 @@ import { Support } from './views/Support';
 import { Settings } from './views/Settings';
 import { BottomNav } from './components/BottomNav';
 
-type View = 'home' | 'withdraw' | 'invest-info' | 'verification' | 'deposit' | 'deposit-rewards' | 'invest' | 'invite' | 'profile' | 'bonuses' | 'transactions' | 'guide' | 'support' | 'settings';
-type NavTab = 'home' | 'trophy' | 'deposit' | 'invest' | 'invite' | 'profile';
+type View = 'home' | 'withdraw' | 'stats' | 'verification' | 'deposit' | 'deposit-rewards' | 'invest' | 'invite' | 'profile' | 'bonuses' | 'transactions' | 'guide' | 'support' | 'settings';
+type NavTab = 'home' | 'stats' | 'deposit' | 'invest' | 'invite' | 'profile';
 
 
 
@@ -54,14 +54,14 @@ function App() {
   const handleTabChange = (tab: NavTab) => {
     setActiveTab(tab);
     if (tab === 'home') setCurrentView('home');
-    if (tab === 'trophy') setCurrentView('bonuses');
+    if (tab === 'stats') setCurrentView('stats');
     if (tab === 'deposit') setCurrentView('deposit');
     if (tab === 'invest') setCurrentView('invest');
     if (tab === 'invite') setCurrentView('invite');
     if (tab === 'profile') setCurrentView('profile');
   };
 
-  const isMainTab = ['home', 'deposit', 'invest', 'invite', 'profile', 'bonuses'].includes(currentView);
+  const isMainTab = ['home', 'deposit', 'invest', 'invite', 'profile', 'stats'].includes(currentView);
 
   return (
     <div className="fade-in" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
@@ -73,11 +73,8 @@ function App() {
         <Withdraw onBack={() => setCurrentView('home')} refreshUser={refreshUser} user={user} />
       )}
       
-      {currentView === 'invest-info' && (
-        <InvestInfo 
-          onBack={() => setCurrentView('home')} 
-          onContinue={() => setCurrentView('verification')}
-        />
+      {currentView === 'stats' && (
+        <Stats />
       )}
       
       {currentView === 'verification' && (
