@@ -23,7 +23,19 @@ export const users = sqliteTable('users', {
 export const transactions = sqliteTable('transactions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').notNull().references(() => users.id),
-  type: text('type').notNull(), // deposit, withdraw, investment_principal, investment_return, referral_bonus, daily_reward
+  type: text('type', {
+    enum: [
+      'deposit',
+      'withdraw',
+      'investment_principal',
+      'investment_return',
+      'referral_bonus',
+      'daily_reward',
+      'gift_box_reward',
+      'deposit_milestone',
+      'join_bonus'
+    ]
+  }).notNull(),
   amount: real('amount').notNull(),
   txid: text('txid').unique(),
   status: text('status').notNull(), // pending, completed, failed

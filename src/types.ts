@@ -33,7 +33,8 @@ export type TransactionType =
   | 'verification_bonus'
   | 'referral_bonus'
   | 'gift_box_reward'
-  | 'deposit_milestone';
+  | 'deposit_milestone'
+  | 'join_bonus';
 
 export interface Transaction {
   id: number;

@@ -50,14 +50,13 @@ export const Stats: React.FC = () => {
   useEffect(() => {
     // Generate static coins
     const baseCoins = [
-      { name: 'BTC', price: 59614, badge: 'LONG' },
-      { name: 'ETH', price: 1569, badge: 'SHORT' },
-      { name: 'BNB', price: 550.95, badge: 'SHORT' },
-      { name: 'SOL', price: 71.41, badge: 'SHORT' },
-      { name: 'TON', price: 1.55, badge: 'SHORT' },
-      { name: 'TRX', price: 0.3233, badge: 'LONG' },
-      { name: 'DOGE', price: 0.0730, badge: 'SHORT' },
-      { name: 'NOT', price: 0.000375, badge: 'LONG' },
+      { name: 'BTC', price: 59614, badge: 'LONG', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
+      { name: 'ETH', price: 1569, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=032' },
+      { name: 'BNB', price: 550.95, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=032' },
+      { name: 'SOL', price: 71.41, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/solana-sol-logo.svg?v=032' },
+      { name: 'TON', price: 1.55, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=032' },
+      { name: 'TRX', price: 0.3233, badge: 'LONG', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg?v=032' },
+      { name: 'DOGE', price: 0.0730, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/dogecoin-doge-logo.svg?v=032' },
     ];
     
     setCoins(baseCoins.map(c => ({
@@ -133,30 +132,38 @@ export const Stats: React.FC = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-green)', fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
           <TrendingUp size={16} /> AI PROFIT - 24H
         </div>
-        <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '24px' }}>
+        <div style={{ 
+          fontSize: '56px', 
+          fontWeight: 800, 
+          marginBottom: '32px',
+          background: 'linear-gradient(135deg, #fff 0%, var(--accent-blue) 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          textShadow: '0 4px 32px rgba(65, 105, 225, 0.3)'
+        }}>
           ${profit.toLocaleString()}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '32px' }}>
-          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: '20px', marginBottom: '4px' }}>⚡</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>$8.5B</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>volume 24h</div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px', marginBottom: '40px' }}>
+          <Card variant="glass" padding="md" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>⚡</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>$8.5B</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>volume 24h</div>
           </Card>
-          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: '20px', marginBottom: '4px' }}>📈</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>3.1M</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>trades 24h</div>
+          <Card variant="glass" padding="md" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>📈</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>3.1M</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>trades 24h</div>
           </Card>
-          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: '20px', marginBottom: '4px' }}>👥</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>12,630</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>investors</div>
+          <Card variant="glass" padding="md" style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>👥</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold' }}>12,630</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>investors</div>
           </Card>
-          <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: '20px', marginBottom: '4px' }}>🎯</div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: 'var(--accent-green)' }}>95%</div>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>win rate</div>
+          <Card variant="glass" padding="md" style={{ textAlign: 'center', border: '1px solid rgba(46, 204, 113, 0.3)', boxShadow: '0 8px 32px 0 rgba(46, 204, 113, 0.1)' }}>
+            <div style={{ fontSize: '24px', marginBottom: '8px' }}>🎯</div>
+            <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--accent-green)' }}>95%</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>win rate</div>
           </Card>
         </div>
 
@@ -201,27 +208,30 @@ export const Stats: React.FC = () => {
           <div style={{ padding: '16px' }}>
             {activeTab === 'Live Trades' && (
               <div>
-                <div style={{ display: 'flex', height: '48px', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px' }}>
-                  <div style={{ width: `${longPercent}%`, background: 'linear-gradient(90deg, #3b82f6, #60a5fa)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px', fontWeight: 'bold' }}>
+                <div style={{ display: 'flex', height: '48px', borderRadius: '12px', overflow: 'hidden', marginBottom: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.4)' }}>
+                  <div style={{ width: `${longPercent}%`, background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.8), rgba(96, 165, 250, 1))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 'bold', transition: 'width 0.3s ease' }}>
                     {longPercent.toFixed(2)}%
-                    <span style={{ fontSize: '10px', opacity: 0.8 }}>LONG</span>
+                    <span style={{ fontSize: '10px', opacity: 0.9, letterSpacing: '1px' }}>LONG</span>
                   </div>
-                  <div style={{ width: `${100 - longPercent}%`, background: 'linear-gradient(90deg, #f97316, #fb923c)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '12px', fontWeight: 'bold' }}>
+                  <div style={{ width: `${100 - longPercent}%`, background: 'linear-gradient(90deg, rgba(249, 115, 22, 0.8), rgba(251, 146, 60, 1))', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 'bold', transition: 'width 0.3s ease' }}>
                     {(100 - longPercent).toFixed(2)}%
-                    <span style={{ fontSize: '10px', opacity: 0.8 }}>SHORT</span>
+                    <span style={{ fontSize: '10px', opacity: 0.9, letterSpacing: '1px' }}>SHORT</span>
                   </div>
                 </div>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {coins.map((coin, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
+                    <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: 'var(--bg-card)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', transition: 'transform 0.2s ease', cursor: 'default' }}
+                         onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                         onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--gradient-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold' }}>
-                          {coin.name[0]}
+                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px' }}>
+                          <img src={(coin as any).icon} alt={coin.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         </div>
-                        <div>
-                          <span style={{ fontWeight: 'bold', marginRight: '8px' }}>{coin.name}</span>
-                          <span style={{ color: 'var(--text-secondary)' }}>${coin.price.toLocaleString()}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{coin.name}</span>
+                          <span style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>${coin.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 })}</span>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

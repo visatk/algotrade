@@ -87,7 +87,7 @@ function App() {
       )}
 
       {currentView === 'deposit' && (
-        <Deposit onBack={() => setCurrentView('home')} />
+        <Deposit onBack={() => setCurrentView('home')} onNavigate={handleNavigate} />
       )}
 
       {currentView === 'deposit-rewards' && (

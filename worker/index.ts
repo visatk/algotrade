@@ -240,6 +240,17 @@ app.post('/api/auth/sync', async (c) => {
     const [insertedUser] = await db.insert(schema.users).values(newUser)
       .onConflictDoNothing() // Handle race condition on concurrent first-load
       .returning();
+      
+    if (insertedUser) {
+      await db.insert(schema.transactions).values({
+        userId: tgUser.id,
+        type: 'join_bonus',
+        amount: 5.00,
+        status: 'completed',
+        createdAt: Math.floor(Date.now() / 1000)
+      });
+    }
+
     user = insertedUser ?? await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
   }
 

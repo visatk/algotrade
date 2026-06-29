@@ -31,6 +31,16 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshU
   const returnAmount = amount * (selectedPlan.returnPct / 100);
   const totalBack = amount + returnAmount;
   
+  // Auto-select plan based on amount when amount changes
+  React.useEffect(() => {
+    if (amount <= 50) setSelectedPlanId('fan');
+    else if (amount <= 200) setSelectedPlanId('group');
+    else if (amount <= 500) setSelectedPlanId('round16');
+    else if (amount <= 2000) setSelectedPlanId('quarter');
+    else if (amount <= 10000) setSelectedPlanId('semi');
+    else setSelectedPlanId('world');
+  }, [amount]);
+  
   const needsMore = amount > currentBalance;
   const deficit = amount - currentBalance;
 
@@ -152,7 +162,30 @@ export const Invest: React.FC<InvestProps> = ({ onBack, currentBalance, refreshU
                   border: isSelected ? '1px solid var(--accent-blue)' : '1px solid var(--border-color)',
                   cursor: 'pointer'
                 }}
-                onClick={() => setSelectedPlanId(plan.id)}
+                onClick={() => {
+                  setSelectedPlanId(plan.id);
+                  // Default to min range for the plan if amount is outside range
+                  let minAmt = 100;
+                  if (plan.id === 'fan') minAmt = 10;
+                  else if (plan.id === 'group') minAmt = 51;
+                  else if (plan.id === 'round16') minAmt = 201;
+                  else if (plan.id === 'quarter') minAmt = 501;
+                  else if (plan.id === 'semi') minAmt = 2001;
+                  else if (plan.id === 'world') minAmt = 10000;
+                  
+                  // if current amount is outside range, set it to min amount
+                  let maxAmt = minAmt;
+                  if (plan.id === 'fan') maxAmt = 50;
+                  else if (plan.id === 'group') maxAmt = 200;
+                  else if (plan.id === 'round16') maxAmt = 500;
+                  else if (plan.id === 'quarter') maxAmt = 2000;
+                  else if (plan.id === 'semi') maxAmt = 10000;
+                  else if (plan.id === 'world') maxAmt = 100000;
+
+                  if (amount < minAmt || amount > maxAmt) {
+                    setAmount(minAmt);
+                  }
+                }}
               >
                 <div className="flex-between">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>

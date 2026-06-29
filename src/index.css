@@ -20,6 +20,7 @@
   
   /* Fonts */
   --font-sans: 'Inter', sans-serif;
+  --font-display: 'Outfit', sans-serif;
   
   /* Radii */
   --radius-sm: 8px;
@@ -63,16 +64,22 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 
 button {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   cursor: pointer;
   border: none;
   background: none;
   outline: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button:active {
+  transform: scale(0.98);
 }
 
 a {
@@ -98,9 +105,10 @@ ul {
 
 .bg-glass {
   background: var(--bg-card);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 .flex-center {

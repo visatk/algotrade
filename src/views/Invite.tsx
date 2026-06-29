@@ -45,7 +45,7 @@ export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
     fetchTop();
   }, []);
 
-  const referralLink = user ? `https://t.me/algo_trade_bot?start=${user.id}` : 'https://t.me/algo_trade_bot';
+  const referralLink = user ? `https://t.me/AlgotradeGlobal_Bot?start=${user.id}` : 'https://t.me/AlgotradeGlobal_Bot';
 
   const copyLink = async () => {
     try {

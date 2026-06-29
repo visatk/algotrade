@@ -24,29 +24,33 @@ export const Card: React.FC<CardProps> = ({
   const variants = {
     glass: {
       background: 'var(--bg-card)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
-      border: '1px solid var(--border-color)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
+      border: '1px solid rgba(255, 255, 255, 0.1)',
       color: 'var(--text-primary)',
+      boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.3)',
     },
     solid: {
       background: 'var(--bg-card-solid)',
-      border: '1px solid var(--border-color)',
+      border: '1px solid rgba(255, 255, 255, 0.05)',
       color: 'var(--text-primary)',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
     },
     green: {
-      background: 'rgba(21, 68, 41, 0.6)',
-      border: '1px solid rgba(46, 204, 113, 0.2)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
+      background: 'rgba(21, 68, 41, 0.4)',
+      border: '1px solid rgba(46, 204, 113, 0.3)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       color: 'var(--text-primary)',
+      boxShadow: '0 8px 32px 0 rgba(46, 204, 113, 0.1)',
     },
     'blue-gradient': {
       background: 'linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(138, 43, 226, 0.2))',
-      border: '1px solid rgba(138, 43, 226, 0.3)',
-      backdropFilter: 'blur(12px)',
-      WebkitBackdropFilter: 'blur(12px)',
+      border: '1px solid rgba(138, 43, 226, 0.4)',
+      backdropFilter: 'blur(16px)',
+      WebkitBackdropFilter: 'blur(16px)',
       color: 'var(--text-primary)',
+      boxShadow: '0 8px 32px 0 rgba(88, 101, 242, 0.15)',
     }
   };
 
