@@ -19,6 +19,7 @@
 		"@twa-dev/sdk": "^8.0.2",
 		"drizzle-orm": "^0.45.2",
 		"hono": "^4.6.4",
+		"lucide-react": "^0.450.0",
 		"react": "^19.2.6",
 		"react-dom": "^19.2.6",
 		"tailwindcss": "^4.3.1",
