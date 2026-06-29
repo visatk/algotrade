@@ -252,6 +252,15 @@ app.post('/api/auth/sync', async (c) => {
     }
 
     user = insertedUser ?? await db.select().from(schema.users).where(eq(schema.users.id, tgUser.id)).get();
+  } else {
+    // Sync updated name/username from Telegram on every launch
+    if (user.firstName !== tgUser.first_name || user.username !== (tgUser.username || null)) {
+      await db.update(schema.users)
+        .set({ firstName: tgUser.first_name, username: tgUser.username || null })
+        .where(eq(schema.users.id, tgUser.id));
+      user.firstName = tgUser.first_name;
+      user.username = tgUser.username || null;
+    }
   }
 
   // Process any mature investments

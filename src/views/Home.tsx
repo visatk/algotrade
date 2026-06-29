@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { api } from '../api/client';
 import { ArrowUpRight, Plus, Package } from 'lucide-react';
+import WebApp from '@twa-dev/sdk';
 
 interface HomeProps {
   onNavigate: (view: string) => void;
@@ -55,7 +56,10 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
     }
   }, [user]);
 
-  const firstName = user?.firstName || 'Trader';
+  const tgUser = WebApp.initDataUnsafe?.user;
+  const firstName = tgUser?.first_name || user?.firstName || 'Trader';
+  const avatarUrl = tgUser?.photo_url;
+  
   return (
     <div style={{ paddingBottom: '100px' }}>
       
@@ -78,9 +82,14 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
         {/* Profile Info */}
         <div style={{ marginBottom: '24px' }}>
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Your AI is analyzing the market</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{firstName}</div>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)' }} className="animate-pulse" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+            {avatarUrl && (
+              <img src={avatarUrl} alt="Avatar" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+            )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{firstName}</div>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)', boxShadow: '0 0 8px var(--accent-green)' }} className="animate-pulse" />
+            </div>
           </div>
         </div>
 
@@ -199,7 +208,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
         
         {/* Gift Boxes */}
         <Card variant="solid" style={{ marginBottom: '32px' }}>
-          <div className="flex-between" style={{ cursor: 'pointer' }}>
+          <div className="flex-between" style={{ cursor: 'pointer' }} onClick={() => onNavigate('bonuses')}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <div style={{ background: 'rgba(243, 156, 18, 0.2)', color: '#f39c12', width: '40px', height: '40px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Package size={20} />
@@ -207,7 +216,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
               <div>
                 <div style={{ fontWeight: 'bold' }}>Open your gift boxes</div>
                 <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  0 boxes available
+                  {user?.giftBoxes || 0} boxes available
                 </div>
               </div>
             </div>
@@ -277,7 +286,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
                 } catch (e) {
                   console.error(e);
                 } finally {
-                  setClaiming(true);
+                  setClaiming(false);
                 }
               }
               setShowDailyReward(false);

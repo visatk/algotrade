@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import type { AppUser } from '../types';
+import WebApp from '@twa-dev/sdk';
 
 interface ProfileProps {
   onBack: () => void;
@@ -10,8 +11,10 @@ interface ProfileProps {
 }
 
 export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) => {
-  const displayName = user?.firstName || 'Guest';
-  const displayUsername = user?.username ? `@${user.username}` : '';
+  const tgUser = WebApp.initDataUnsafe?.user;
+  const displayName = tgUser?.first_name || user?.firstName || 'Guest';
+  const displayUsername = tgUser?.username ? `@${tgUser.username}` : (user?.username ? `@${user.username}` : '');
+  const avatarUrl = tgUser?.photo_url;
   const joinDate = user?.createdAt ? new Date(user.createdAt * 1000).toLocaleDateString() : 'today';
 
   return (
@@ -23,9 +26,13 @@ export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) =>
         <Card variant="solid" style={{ marginBottom: '24px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-secondary)', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.1)' }}>
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
                 <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, #2c3e50, #3498db)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
                   👤
                 </div>
+              )}
             </div>
             <div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '4px' }}>{displayName}</div>
