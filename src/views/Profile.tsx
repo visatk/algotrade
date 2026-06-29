@@ -36,7 +36,7 @@ export const Profile: React.FC<ProfileProps> = ({ onBack, user, onNavigate }) =>
         </Card>
 
         {/* Balance Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '32px' }}>
           <Card variant="solid">
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-blue)', marginBottom: '8px', fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px' }}>
               <span>💼</span> AVAILABLE

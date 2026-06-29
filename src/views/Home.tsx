@@ -89,28 +89,28 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>TOTAL BALANCE</div>
           <div style={{ fontSize: '48px', fontWeight: 800, marginBottom: '12px', lineHeight: 1 }}>${balance}</div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(138, 43, 226, 0.1)', color: '#b19cd9', padding: '6px 12px', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold', border: '1px solid rgba(138, 43, 226, 0.3)' }}>
-            🎁 $5.50 locked bonus
+            🎁 ${!user?.verificationClaimed ? '165.00' : '0.00'} locked bonus
           </div>
         </div>
 
         {/* 3-Column Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '8px', marginBottom: '24px' }}>
           <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>AVAILABLE</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>$1</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>${(user?.balance || 0).toFixed(2)}</div>
           </Card>
           <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
-            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>INVEST</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>$5</div>
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>INVESTED</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>${(user?.totalDeposited || 0).toFixed(2)}</div>
           </Card>
           <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginBottom: '4px' }}>EARNED</div>
-            <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-green)' }}>$6</div>
+            <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--accent-green)' }}>${(user?.totalEarned || 0).toFixed(2)}</div>
           </Card>
         </div>
 
         {/* Actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '32px' }}>
           <button 
             onClick={() => onNavigate('deposit')}
             style={{ 

@@ -28,7 +28,8 @@
   --radius-full: 9999px;
   
   /* Layout */
-  --max-width: 480px;
+  --max-width: 100%;
+  --content-max-width: 1200px;
 }
 
 * {

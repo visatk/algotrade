@@ -137,7 +137,7 @@ export const Stats: React.FC = () => {
           ${profit.toLocaleString()}
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '32px' }}>
           <Card variant="solid" padding="sm" style={{ textAlign: 'center', background: 'rgba(255,255,255,0.02)' }}>
             <div style={{ fontSize: '20px', marginBottom: '4px' }}>⚡</div>
             <div style={{ fontSize: '18px', fontWeight: 'bold' }}>$8.5B</div>
