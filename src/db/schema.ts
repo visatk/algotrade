@@ -30,6 +30,7 @@ export const transactions = sqliteTable('transactions', {
       'investment_principal',
       'investment_return',
       'referral_bonus',
+      'verification_bonus',
       'daily_reward',
       'gift_box_reward',
       'deposit_milestone',

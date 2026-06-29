@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
-import { Copy, QrCode } from 'lucide-react';
+import { Copy } from 'lucide-react';
 
 interface DepositProps {
   onBack: () => void;
