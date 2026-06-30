@@ -21,6 +21,7 @@ export interface AppUser {
   lastClaimDate: number | null;
   giftBoxes: number;
   verificationClaimed: boolean;
+  lastSpinDate: number | null;
   createdAt: number;
 }
 
@@ -34,7 +35,8 @@ export type TransactionType =
   | 'referral_bonus'
   | 'gift_box_reward'
   | 'deposit_milestone'
-  | 'join_bonus';
+  | 'join_bonus'
+  | 'spin_reward';
 
 export interface Transaction {
   id: number;

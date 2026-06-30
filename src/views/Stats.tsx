@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { TrendingUp, Activity, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import { faker } from '@faker-js/faker';
+import { api } from '../api/client';
 
 type Tab = 'Live Trades' | 'Trades' | 'Investments' | 'Withdrawals';
 
@@ -11,29 +11,30 @@ interface Coin {
   price: number;
   badge: string;
   change: string;
+  symbol?: string;
 }
 
 interface Trade {
-  id: string;
   type: string;
-  bot: string;
-  user: string;
-  amount: string;
-  time: number;
+  pair: string;
+  leverage: string;
+  pnl: number;
+  time: string;
+  isWinning: boolean;
 }
 
 interface Investment {
   id: string;
-  user: string;
-  amount: string;
-  time: number;
+  name: string;
+  amount: number;
+  time: string;
 }
 
 interface Withdrawal {
   id: string;
-  user: string;
-  amount: string;
-  time: number;
+  amount: number;
+  address: string;
+  time: string;
 }
 
 export const Stats: React.FC = () => {
@@ -48,73 +49,76 @@ export const Stats: React.FC = () => {
   const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
 
   useEffect(() => {
-    // Generate static coins
     const baseCoins = [
-      { name: 'BTC', price: 59614, badge: 'LONG', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
-      { name: 'ETH', price: 1569, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=032' },
-      { name: 'BNB', price: 550.95, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=032' },
-      { name: 'SOL', price: 71.41, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/solana-sol-logo.svg?v=032' },
-      { name: 'TON', price: 1.55, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=032' },
-      { name: 'TRX', price: 0.3233, badge: 'LONG', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg?v=032' },
-      { name: 'DOGE', price: 0.0730, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/dogecoin-doge-logo.svg?v=032' },
+      { name: 'BTC', symbol: 'BTCUSDT', price: 59614, badge: 'LONG', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032' },
+      { name: 'ETH', symbol: 'ETHUSDT', price: 1569, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=032' },
+      { name: 'BNB', symbol: 'BNBUSDT', price: 550.95, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=032' },
+      { name: 'SOL', symbol: 'SOLUSDT', price: 71.41, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/solana-sol-logo.svg?v=032' },
+      { name: 'TON', symbol: 'TONUSDT', price: 1.55, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/toncoin-ton-logo.svg?v=032' },
+      { name: 'TRX', symbol: 'TRXUSDT', price: 0.3233, badge: 'LONG', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg?v=032' },
+      { name: 'DOGE', symbol: 'DOGEUSDT', price: 0.0730, badge: 'SHORT', icon: 'https://cryptologos.cc/logos/dogecoin-doge-logo.svg?v=032' },
     ];
     
+    // Initially set fallback prices
     setCoins(baseCoins.map(c => ({
       ...c,
       change: (Math.random() * 5 - 2.5).toFixed(2)
     })));
 
-    // Generate initial trades
-    const newTrades = Array.from({ length: 15 }).map(() => ({
-      id: faker.string.uuid(),
-      type: Math.random() > 0.5 ? 'LONG' : 'SHORT',
-      bot: Math.random() > 0.5 ? 'Swift' : 'Wave',
-      user: faker.person.firstName(),
-      amount: faker.finance.amount({ min: 1, max: 50, dec: 2 }),
-      time: faker.number.int({ min: 1, max: 59 })
-    })).sort((a, b) => a.time - b.time);
-    setTrades(newTrades);
+    // Fetch live prices from Binance
+    const fetchPrices = async () => {
+      try {
+        const symbols = '%5B' + baseCoins.map(c => `"${c.symbol}"`).join(',') + '%5D';
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbols=${symbols}`);
+        const data = await res.json();
+        const priceMap = new Map();
+        if (Array.isArray(data)) {
+          data.forEach((p: any) => priceMap.set(p.symbol, parseFloat(p.price)));
+        }
+        
+        setCoins(prev => prev.map(c => ({
+          ...c,
+          price: c.symbol && priceMap.has(c.symbol) ? priceMap.get(c.symbol) : c.price,
+          change: (Math.random() * 5 - 2.5).toFixed(2)
+        })));
+      } catch (err) {
+        console.error('Failed to fetch binance prices', err);
+      }
+    };
+    
+    fetchPrices();
+    const priceInterval = setInterval(fetchPrices, 30000); // 30s instead of 10s
 
-    // Generate initial investments
-    const newInvestments = Array.from({ length: 15 }).map(() => ({
-      id: faker.string.uuid(),
-      user: `${faker.person.firstName()} ${faker.person.lastName().charAt(0)}.`,
-      amount: faker.finance.amount({ min: 50, max: 2000, dec: 2 }),
-      time: faker.number.int({ min: 1, max: 59 })
-    })).sort((a, b) => a.time - b.time);
-    setInvestments(newInvestments);
+    const fetchStats = async () => {
+      try {
+        const data = await api.getStats();
+        setProfit(data.profit);
+        setLongPercent(data.longPercent);
+        setTrades(data.trades);
+        setInvestments(data.investments);
+        setWithdrawals(data.withdrawals);
+      } catch (err) {
+        console.error('Failed to fetch stats', err);
+      }
+    };
+    
+    fetchStats();
+    const statsInterval = setInterval(fetchStats, 60000); // Re-sync stats every 1 minute
 
-    // Generate initial withdrawals
-    const newWithdrawals = Array.from({ length: 15 }).map(() => {
-      const first = faker.person.firstName();
-      const masked = `${first.charAt(0)}****${first.charAt(first.length-1)} ${faker.person.lastName().charAt(0)}.`;
-      return {
-        id: faker.string.uuid(),
-        user: masked,
-        amount: faker.finance.amount({ min: 20, max: 1000, dec: 2 }),
-        time: faker.number.int({ min: 1, max: 59 })
-      };
-    }).sort((a, b) => a.time - b.time);
-    setWithdrawals(newWithdrawals);
-
-  }, []);
-
-  // Simulate live updates
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProfit(p => p + Math.floor(Math.random() * 100));
+    // Simulate live updates for UI effect between syncs
+    const updateInterval = setInterval(() => {
+      setProfit(p => p + Math.random() * 2); // Slow down the drift
       setLongPercent(p => {
         const next = p + (Math.random() * 0.2 - 0.1);
         return Math.max(0, Math.min(100, next));
       });
-      
-      // Update times
-      setTrades(prev => prev.map(t => ({ ...t, time: t.time + 1 })));
-      setInvestments(prev => prev.map(t => ({ ...t, time: t.time + 1 })));
-      setWithdrawals(prev => prev.map(t => ({ ...t, time: t.time + 1 })));
-      
     }, 1000);
-    return () => clearInterval(interval);
+
+    return () => {
+      clearInterval(priceInterval);
+      clearInterval(statsInterval);
+      clearInterval(updateInterval);
+    };
   }, []);
 
   const tabs: { id: Tab; icon: React.ReactNode }[] = [
@@ -257,16 +261,20 @@ export const Stats: React.FC = () => {
             
             {activeTab === 'Trades' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                {trades.map(t => (
-                  <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: t.type === 'LONG' ? 'var(--accent-green)' : '#e74c3c' }} />
-                      <span style={{ fontWeight: 'bold', color: t.type === 'LONG' ? 'var(--accent-green)' : '#e74c3c' }}>{t.type}</span>
-                      <span style={{ color: 'var(--text-secondary)' }}>{t.bot} · {t.user}</span>
-                    </div>
+                {trades.map((t, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ fontWeight: 'bold', color: 'var(--accent-green)' }}>${t.amount}</span>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t.time}s ago</span>
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: t.type === 'Long' ? 'var(--accent-green)' : '#e74c3c' }} />
+                      <div>
+                        <div style={{ fontWeight: 'bold' }}>{t.pair}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t.type} · {t.leverage}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                      <span style={{ fontWeight: 'bold', color: t.isWinning ? 'var(--accent-green)' : '#e74c3c' }}>
+                        {t.isWinning ? '+' : ''}{t.pnl} USDT
+                      </span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t.time}</span>
                     </div>
                   </div>
                 ))}
@@ -279,12 +287,12 @@ export const Stats: React.FC = () => {
                   <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)' }} />
-                      <span style={{ fontWeight: 'bold' }}>{t.user}</span>
-                      <span style={{ color: 'var(--text-secondary)' }}>invested in</span>
+                      <span style={{ fontWeight: 'bold' }}>{t.name}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>invested</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <span style={{ fontWeight: 'bold', color: 'var(--accent-green)' }}>${t.amount}</span>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t.time}s ago</span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t.time}</span>
                     </div>
                   </div>
                 ))}
@@ -297,12 +305,12 @@ export const Stats: React.FC = () => {
                   <div key={t.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-green)' }} />
-                      <span style={{ fontWeight: 'bold' }}>{t.user}</span>
+                      <span style={{ fontWeight: 'bold' }}>{t.address}</span>
                       <span style={{ color: 'var(--text-secondary)' }}>withdrew</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <span style={{ fontWeight: 'bold', color: 'var(--accent-green)' }}>${t.amount}</span>
-                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t.time}s ago</span>
+                      <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>{t.time}</span>
                     </div>
                   </div>
                 ))}

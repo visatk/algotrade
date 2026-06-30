@@ -4,7 +4,9 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2026-06-25",
 	"assets": {
-		"not_found_handling": "single-page-application"
+		"not_found_handling": "single-page-application",
+		"binding": "ASSETS",
+		"run_worker_first": ["/api/*"]
 	},
 	"observability": {
 		"enabled": true
@@ -17,7 +19,7 @@
     {
       "binding": "DB",
       "database_name": "exchange",
-      "database_id": "f4d8dff4-7291-416e-87ef-8b1fc87d1a74"
+      "database_id": "9f693983-ecc1-484b-83e1-6f8523c981f4"
     }
   ]
 }

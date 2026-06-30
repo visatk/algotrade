@@ -73,7 +73,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
             <span style={{ fontSize: '20px', fontWeight: 800 }}>ALGOMIND</span>
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '16px', border: '1px solid var(--border-color)', cursor: 'pointer' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '16px', border: '1px solid var(--border-color)', cursor: 'pointer' }} onClick={() => onNavigate('spin-wheel')}>
             <span style={{ fontSize: '16px' }}>🎡</span>
             <span style={{ fontWeight: 'bold', fontSize: '12px', color: '#f39c12' }}>SPIN</span>
           </div>
@@ -161,7 +161,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
         </div>
 
         {/* Path to $165 */}
-        <Card variant="solid" style={{ marginBottom: '16px' }}>
+        <Card variant="solid" style={{ marginBottom: '16px', cursor: 'pointer' }} onClick={() => onNavigate('verification')}>
           <div className="flex-between" style={{ marginBottom: '16px' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Your path to $165</span>
             <span style={{ fontSize: '12px', color: '#f39c12' }}>Ends Sunday</span>
@@ -265,7 +265,7 @@ export const Home: React.FC<HomeProps> = ({ onNavigate, balance, user, refreshUs
                     borderRadius: '12px', padding: '8px 4px', textAlign: 'center', 
                     background: isCurrent ? 'rgba(65, 105, 225, 0.1)' : 'transparent'
                   }}>
-                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>${day === 1 || day === 2 ? '0.5' : day === 3 || day === 4 ? '1' : day === 5 ? '1.5' : day === 6 ? '2' : '3'}</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '14px' }}>${Math.min(day * 0.5, 3.0)}</div>
                     <div style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>D{day}</div>
                   </div>
                 );

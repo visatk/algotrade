@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
-import { Copy } from 'lucide-react';
+import { Copy, CheckCircle2 } from 'lucide-react';
+import { api } from '../api/client';
 
 interface DepositProps {
   onBack: () => void;
@@ -14,13 +15,16 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, onNavigate }) => {
   const [network, setNetwork] = useState<string>('BEP20');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'Deposit' | 'Rewards 100%'>('Deposit');
+  const [txid, setTxid] = useState<string>('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const cryptos = [
-    { id: 'USDT', badge: 'HOT', color: 'var(--accent-green)', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=032', networks: [{id:'BEP20', badge: 'BEST', color: 'var(--accent-green)'}, {id:'TRC20'}, {id:'ERC20'}] },
-    { id: 'BTC', icon: 'https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=032', networks: [{id:'Bitcoin', badge: 'BEST', color: 'var(--accent-green)'}, {id:'BEP20'}] },
-    { id: 'ETH', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=032', networks: [{id:'ERC20', badge: 'BEST', color: 'var(--accent-green)'}, {id:'BEP20'}, {id:'Arbitrum'}] },
-    { id: 'BNB', icon: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=032', networks: [{id:'BEP20', badge: 'BEST', color: 'var(--accent-green)'}] },
-    { id: 'TRX', icon: 'https://cryptologos.cc/logos/tron-trx-logo.svg?v=032', networks: [{id:'TRC20', badge: 'BEST', color: 'var(--accent-green)'}] }
+    { id: 'USDT', badge: 'HOT', color: 'var(--accent-green)', icon: 'https://cryptologos.cc/logos/tether-usdt-logo.svg?v=032', networks: [{id:'BEP20', badge: 'BEST', color: 'var(--accent-green)'}, {id:'TRC20'}] },
+    { id: 'ETH', icon: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=032', networks: [{id:'ETH', badge: 'BEST', color: 'var(--accent-green)'}] },
+    { id: 'BNB', icon: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg?v=032', networks: [{id:'BNB', badge: 'BEST', color: 'var(--accent-green)'}] },
+    { id: 'LTC', icon: 'https://cryptologos.cc/logos/litecoin-ltc-logo.svg?v=032', networks: [{id:'LTC', badge: 'BEST', color: 'var(--accent-green)'}] }
   ];
 
   const currentCryptoObj = cryptos.find(c => c.id === crypto) || cryptos[0];
@@ -33,11 +37,12 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, onNavigate }) => {
     setNetwork(targetObj.networks[0].id);
   };
 
-  // Generate a mock deterministic address based on network
+  // Generate deterministic address based on network
   const address = React.useMemo(() => {
-    if (network === 'TRC20') return 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t';
-    if (network === 'Bitcoin') return 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh';
-    return '0xfb6af7b581bc0fb7b09dd678fda94dfbc11e92b1';
+    if (network === 'TRC20') return 'TCkK17d4FjSDR7GqVvYpEavh2yR9w3Zp4u';
+    if (network === 'LTC') return 'LeWf6wQpC3o1mXkLgP1dE2eA8uG3V7H8pP';
+    if (network === 'BEP20' || network === 'BNB' || network === 'ETH') return '0xd895697F876610bDBFdf0b15112B180b953d6Ebe';
+    return '0xd895697F876610bDBFdf0b15112B180b953d6Ebe';
   }, [network]);
 
   const handleCopy = () => {
@@ -51,6 +56,25 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, onNavigate }) => {
   const bonus20 = amount * 0.2;
   const bonus50 = Math.min(amount * 0.5, 250);
   const total = amount + bonus20 + bonus50;
+
+  const handleDeposit = async () => {
+    if (!txid || txid.length < 10) {
+      setError('Please enter a valid Transaction ID / Hash');
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      setError(null);
+      await api.deposit(amount, network, txid);
+      setSuccess(true);
+      setTxid('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Deposit verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ paddingBottom: '100px' }}>
@@ -282,6 +306,63 @@ export const Deposit: React.FC<DepositProps> = ({ onBack, onNavigate }) => {
             ))}
           </div>
         </Card>
+
+        {/* Verification Section */}
+        <div style={{ marginTop: '32px', marginBottom: '32px' }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'bold', textTransform: 'uppercase', marginBottom: '12px' }}>
+            VERIFY DEPOSIT
+          </div>
+          <Card variant="solid">
+            <div style={{ marginBottom: '16px' }}>
+              <input 
+                type="text" 
+                placeholder="Paste Transaction Hash (TXID) here" 
+                value={txid}
+                onChange={(e) => setTxid(e.target.value)}
+                style={{
+                  width: '100%',
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#fff',
+                  fontSize: '14px',
+                  outline: 'none',
+                  padding: '8px 0',
+                }} 
+              />
+            </div>
+            
+            {error && (
+              <div style={{ color: '#e74c3c', fontSize: '14px', marginBottom: '16px', background: 'rgba(231, 76, 60, 0.1)', padding: '12px', borderRadius: '8px' }}>
+                {error}
+              </div>
+            )}
+
+            {success && (
+              <div style={{ color: 'var(--accent-green)', fontSize: '14px', marginBottom: '16px', background: 'rgba(46, 204, 113, 0.1)', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={16} /> Deposit submitted! Your balance will update shortly.
+              </div>
+            )}
+
+            <button 
+              onClick={handleDeposit}
+              disabled={loading || success}
+              style={{ 
+                width: '100%', 
+                padding: '16px', 
+                background: success ? 'var(--accent-green)' : 'var(--accent-blue)', 
+                color: success ? '#000' : '#fff', 
+                border: 'none', 
+                borderRadius: '16px', 
+                fontSize: '16px', 
+                fontWeight: 'bold',
+                cursor: (loading || success) ? 'not-allowed' : 'pointer',
+                opacity: (loading || success) ? 0.7 : 1
+              }}
+            >
+              {loading ? 'Verifying...' : success ? 'Submitted' : 'Verify Deposit'}
+            </button>
+          </Card>
+        </div>
 
       </div>
     </div>

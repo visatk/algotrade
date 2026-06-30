@@ -13,6 +13,7 @@ export const users = sqliteTable('users', {
   lastClaimDate: integer('last_claim_date'),
   giftBoxes: integer('gift_boxes').default(0).notNull(),
   verificationClaimed: integer('verification_claimed', { mode: 'boolean' }).default(false).notNull(),
+  lastSpinDate: integer('last_spin_date'),
   createdAt: integer('created_at').notNull(),
 }, (table) => {
   return {
@@ -34,7 +35,8 @@ export const transactions = sqliteTable('transactions', {
       'daily_reward',
       'gift_box_reward',
       'deposit_milestone',
-      'join_bonus'
+      'join_bonus',
+      'spin_reward'
     ]
   }).notNull(),
   amount: real('amount').notNull(),
