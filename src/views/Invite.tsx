@@ -3,19 +3,13 @@ import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { Button } from '../components/ui/Button';
 import { api } from '../api/client';
-import type { AppUser } from '../types';
+import type { AppUser, TopReferrer } from '../types';
 
 interface InviteProps {
   onBack: () => void;
   user: AppUser | null;
 }
 
-interface TopReferrer {
-  id: number;
-  firstName: string;
-  username: string | null;
-  count: number;
-}
 
 export const Invite: React.FC<InviteProps> = ({ onBack, user }) => {
   const [copied, setCopied] = useState(false);

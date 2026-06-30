@@ -65,8 +65,10 @@ export interface ReferralLevel {
 }
 
 export interface TopReferrer {
+  id: number;
   firstName: string;
-  referralCount: number;
+  username: string | null;
+  count: number;
 }
 
 export interface Trade {

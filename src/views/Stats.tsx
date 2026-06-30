@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { TrendingUp, Activity, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import { api, StatTrade, StatInvestment, StatWithdrawal } from '../api/client';
+import { api } from '../api/client';
+import type { StatTrade, StatInvestment, StatWithdrawal } from '../api/client';
 
 type Tab = 'Live Trades' | 'Trades' | 'Investments' | 'Withdrawals';
 
