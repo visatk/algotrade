@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../components/ui/Card';
 import { Header } from '../components/Header';
 import { TrendingUp, Activity, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import { api } from '../api/client';
+import { api, StatTrade, StatInvestment, StatWithdrawal } from '../api/client';
 
 type Tab = 'Live Trades' | 'Trades' | 'Investments' | 'Withdrawals';
 
@@ -12,30 +12,9 @@ interface Coin {
   badge: string;
   change: string;
   symbol?: string;
+  icon?: string;
 }
 
-interface Trade {
-  type: string;
-  pair: string;
-  leverage: string;
-  pnl: number;
-  time: string;
-  isWinning: boolean;
-}
-
-interface Investment {
-  id: string;
-  name: string;
-  amount: number;
-  time: string;
-}
-
-interface Withdrawal {
-  id: string;
-  amount: number;
-  address: string;
-  time: string;
-}
 
 export const Stats: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>('Live Trades');
@@ -44,9 +23,9 @@ export const Stats: React.FC = () => {
   
   // Fake data state
   const [coins, setCoins] = useState<Coin[]>([]);
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [investments, setInvestments] = useState<Investment[]>([]);
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [trades, setTrades] = useState<StatTrade[]>([]);
+  const [investments, setInvestments] = useState<StatInvestment[]>([]);
+  const [withdrawals, setWithdrawals] = useState<StatWithdrawal[]>([]);
 
   useEffect(() => {
     const baseCoins = [
@@ -73,7 +52,7 @@ export const Stats: React.FC = () => {
         const data = await res.json();
         const priceMap = new Map();
         if (Array.isArray(data)) {
-          data.forEach((p: any) => priceMap.set(p.symbol, parseFloat(p.price)));
+          data.forEach((p: { symbol: string; price: string }) => priceMap.set(p.symbol, parseFloat(p.price)));
         }
         
         setCoins(prev => prev.map(c => ({
@@ -231,7 +210,7 @@ export const Stats: React.FC = () => {
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '6px' }}>
-                          <img src={(coin as any).icon} alt={coin.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                          <img src={coin.icon} alt={coin.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
                           <span style={{ fontWeight: 'bold', fontSize: '16px' }}>{coin.name}</span>

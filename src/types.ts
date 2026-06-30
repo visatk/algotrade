@@ -47,3 +47,33 @@ export interface Transaction {
   status: 'pending' | 'completed' | 'failed';
   createdAt: number;
 }
+
+export interface Investment {
+  id: number;
+  userId: number;
+  planId: string;
+  amount: number;
+  expectedReturn: number;
+  startDate: number;
+  endDate: number;
+  status: 'active' | 'completed';
+}
+
+export interface ReferralLevel {
+  level: number;
+  count: number;
+}
+
+export interface TopReferrer {
+  firstName: string;
+  referralCount: number;
+}
+
+export interface Trade {
+  pair: string;
+  type: 'LONG' | 'SHORT';
+  entry: number;
+  exit: number;
+  profit: number;
+  time: string;
+}

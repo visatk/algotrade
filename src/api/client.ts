@@ -2,7 +2,7 @@ import WebApp from '@twa-dev/sdk';
 
 const API_BASE = ''; // Uses relative URL, handled by Vite in dev and CF in prod
 
-import type { AppUser, Transaction } from '../types';
+import type { AppUser, Transaction, Investment, ReferralLevel, TopReferrer } from '../types';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const initData = WebApp.initData || ''; // Fallback for local testing without TG
@@ -30,17 +30,21 @@ export interface SyncUserResponse { success: boolean; user: AppUser; }
 export interface GetUserResponse { user: AppUser; }
 export interface ClaimDailyRewardResponse { success: boolean; rewardAmount: number; newStreak: number; user: AppUser; }
 export interface StartInvestmentResponse { success: boolean; expectedReturn: number; }
-export interface GetInvestmentsResponse { investments: any[]; } // Todo: Investment type
+export interface GetInvestmentsResponse { investments: Investment[]; }
 export interface DepositResponse { success: boolean; user: AppUser; }
 export interface WithdrawResponse { success: boolean; user: AppUser; }
-export interface GetReferralsResponse { networkSize: number; totalEarned: number; levels: { level: number; count: number; }[]; }
-export interface GetTopReferrersResponse { topReferrers: any[]; }
+export interface GetReferralsResponse { networkSize: number; totalEarned: number; levels: ReferralLevel[]; }
+export interface GetTopReferrersResponse { topReferrers: TopReferrer[]; }
 export interface VerifyTaskResponse { success: boolean; user: AppUser; }
 export interface GetTransactionsResponse { transactions: Transaction[]; }
 export interface OpenGiftBoxResponse { success: boolean; rewardAmount: number; user: AppUser; }
 export interface ClaimDepositMilestoneResponse { success: boolean; rewardAmount: number; user: AppUser; }
 export interface SpinWheelResponse { success: boolean; rewardAmount: number; cost: number; user: AppUser; }
-export interface GetStatsResponse { profit: number; longPercent: number; trades: any[]; investments: any[]; withdrawals: any[]; }
+
+export interface StatTrade { type: string; pair: string; leverage: string; pnl: number; time: string; isWinning: boolean; }
+export interface StatInvestment { id: string; name: string; amount: number; time: string; }
+export interface StatWithdrawal { id: string; amount: number; address: string; time: string; }
+export interface GetStatsResponse { profit: number; longPercent: number; trades: StatTrade[]; investments: StatInvestment[]; withdrawals: StatWithdrawal[]; }
 
 export const api = {
   syncUser: () => fetchApi<SyncUserResponse>('/api/auth/sync', { method: 'POST' }),

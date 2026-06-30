@@ -216,14 +216,9 @@ rewards.post('/spin', zValidator('json', spinSchema), async (c) => {
   const cost = isPaid ? 1 : 0;
   const netChange = rewardAmount - cost;
 
-  const updates: any = { balance: sql`${schema.users.balance} + ${netChange}` };
-  if (!isPaid) {
-    updates.lastSpinDate = now;
-  }
-
   const updateQuery = isPaid
-    ? db.update(schema.users).set(updates).where(and(eq(schema.users.id, tgUser.id), sql`${schema.users.balance} >= 1`)).returning()
-    : db.update(schema.users).set(updates).where(eq(schema.users.id, tgUser.id)).returning();
+    ? db.update(schema.users).set({ balance: sql`${schema.users.balance} + ${netChange}` }).where(and(eq(schema.users.id, tgUser.id), sql`${schema.users.balance} >= 1`)).returning()
+    : db.update(schema.users).set({ balance: sql`${schema.users.balance} + ${netChange}`, lastSpinDate: now }).where(eq(schema.users.id, tgUser.id)).returning();
 
   const updateResult = await updateQuery;
   

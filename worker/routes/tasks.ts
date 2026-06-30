@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 import * as schema from '../../src/db/schema';
 import type { Env, Variables } from '../env';
 import { getDb } from '../db';
@@ -23,15 +23,19 @@ tasks.post('/verify', async (c) => {
   const now = Math.floor(Date.now() / 1000);
   const reward = 165.0;
 
-  const batchResponse = await db.batch([
-    db.update(schema.users)
-      .set({ 
-        balance: sql`${schema.users.balance} + ${reward}`,
-        verificationClaimed: true
-      })
-      .where(eq(schema.users.id, tgUser.id))
-      .returning(),
-      
+  const updateResult = await db.update(schema.users)
+    .set({ 
+      balance: sql`${schema.users.balance} + ${reward}`,
+      verificationClaimed: true
+    })
+    .where(and(eq(schema.users.id, tgUser.id), eq(schema.users.verificationClaimed, false)))
+    .returning();
+
+  if (updateResult.length === 0) {
+    return c.json({ error: 'Already claimed or user not found' }, 400);
+  }
+
+  await db.batch([
     db.insert(schema.transactions).values({
       userId: tgUser.id,
       type: 'verification_bonus',
@@ -41,7 +45,7 @@ tasks.post('/verify', async (c) => {
     })
   ]);
 
-  return c.json({ success: true, user: batchResponse[0][0] });
+  return c.json({ success: true, user: updateResult[0] });
 });
 
 export default tasks;
