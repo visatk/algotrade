@@ -2,7 +2,7 @@ import WebApp from '@twa-dev/sdk';
 
 const API_BASE = ''; // Uses relative URL, handled by Vite in dev and CF in prod
 
-import { AppUser, Transaction } from '../types';
+import type { AppUser, Transaction } from '../types';
 
 async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const initData = WebApp.initData || ''; // Fallback for local testing without TG
@@ -33,8 +33,8 @@ export interface StartInvestmentResponse { success: boolean; expectedReturn: num
 export interface GetInvestmentsResponse { investments: any[]; } // Todo: Investment type
 export interface DepositResponse { success: boolean; user: AppUser; }
 export interface WithdrawResponse { success: boolean; user: AppUser; }
-export interface GetReferralsResponse { referrals: AppUser[]; l1Count: number; l2Count: number; l3Count: number; totalEarned: number; }
-export interface GetTopReferrersResponse { top: any[]; }
+export interface GetReferralsResponse { networkSize: number; totalEarned: number; levels: { level: number; count: number; }[]; }
+export interface GetTopReferrersResponse { topReferrers: any[]; }
 export interface VerifyTaskResponse { success: boolean; user: AppUser; }
 export interface GetTransactionsResponse { transactions: Transaction[]; }
 export interface OpenGiftBoxResponse { success: boolean; rewardAmount: number; user: AppUser; }

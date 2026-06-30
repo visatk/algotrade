@@ -25,7 +25,7 @@ stats.get('/', async (c) => {
 
   const pairs = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'BNB/USDT', 'AVAX/USDT'];
 
-  const trades = Array.from({ length: 15 }).map((_, i) => {
+  const trades = Array.from({ length: 15 }).map(() => {
     const isLong = Math.random() > 0.5;
     const isWinning = Math.random() > 0.3; // 70% win rate
     const pnl = (Math.random() * 50 + 5) * (isWinning ? 1 : -1);

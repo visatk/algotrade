@@ -53,7 +53,7 @@ withdraw.post('/', zValidator('json', withdrawSchema), async (c) => {
     return c.json({ error: 'Insufficient balance or user not found' }, 400);
   }
 
-  const batchResponse = await db.batch([
+  await db.batch([
     db.insert(schema.transactions).values({
       userId: tgUser.id,
       type: 'withdraw',
